@@ -57,7 +57,7 @@ const UserInfoPanel = ({ selectedUser, showUserInfo, closeUserInfo, activeTab, s
                     <Box key={`midia-${mes}-${index}`} w="60px" h="60px">
                       {msg.mimeType.startsWith('image/') ? (
                         <img
-                          src={`http://localhost:4007${msg.url}`}
+                          src={`https://api.chat.nexusnerds.com.br${msg.url}`}
                           alt={msg.nomeArquivo}
                           style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }}
                         />
@@ -66,7 +66,7 @@ const UserInfoPanel = ({ selectedUser, showUserInfo, closeUserInfo, activeTab, s
                           controls
                           style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }}
                         >
-                          <source src={`http://localhost:4007${msg.url}`} type={msg.mimeType} />
+                          <source src={`https://api.chat.nexusnerds.com.br${msg.url}`} type={msg.mimeType} />
                           Seu navegador não suporta o elemento de vídeo.
                         </video>
                       )}
@@ -81,7 +81,7 @@ const UserInfoPanel = ({ selectedUser, showUserInfo, closeUserInfo, activeTab, s
                       key={`${activeTab}-${mes}-${index}`}
                       href={
                         activeTab === 'documentos'
-                          ? `http://localhost:4007${msg.url}`
+                          ? `https://api.chat.nexusnerds.com.br${msg.url}`
                           : msg.texto.match(/https?:\/\/[^\s]+/)[0]
                       }
                       download={activeTab === 'documentos' ? msg.nomeArquivo : undefined}

@@ -99,7 +99,7 @@ export default function ChatComponent() {
   const buscarHistoricoConversa = async (meuID, idOutroUsuario, isGroup = false) => {
     if (isGroup) {
       try {
-        const res = await fetch(`http://localhost:4007/group/${idOutroUsuario}`);
+        const res = await fetch(`https://api.chat.nexusnerds.com.br/group/${idOutroUsuario}`);
         const data = await res.json();
 
         const historicoFormatado = (data || []).map((msg) => {
@@ -127,7 +127,7 @@ export default function ChatComponent() {
     } else {
       const idsOrdenados = [meuID, idOutroUsuario].sort();
       try {
-        const res = await fetch(`http://localhost:4007/chat/${idsOrdenados[0]}/${idsOrdenados[1]}`);
+        const res = await fetch(`https://api.chat.nexusnerds.com.br/chat/${idsOrdenados[0]}/${idsOrdenados[1]}`);
         const data = await res.json();
 
         const historicoFormatado = (data || []).map((msg) => {
@@ -444,7 +444,7 @@ export default function ChatComponent() {
     const buscarGrupos = async () => {
       if (!meuID) return;
       try {
-        const res = await fetch(`http://localhost:4007/groups/${meuID}`);
+        const res = await fetch(`https://api.chat.nexusnerds.com.br/groups/${meuID}`);
         const data = await res.json();
         setGrupos(data.map((grupo) => ({
           id: grupo.id,

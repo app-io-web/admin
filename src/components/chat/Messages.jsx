@@ -123,14 +123,14 @@ const Messages = memo(({ lista, destinatario, replyingTo, handleReply, mensagens
                   {msg.tipo === 'anexo' ? (
                     <>
                       {msg.mimeType.startsWith('image/') ? (
-                        <img src={`http://localhost:4007${msg.url}`} alt={msg.nomeArquivo} style={{ maxWidth: '200px', borderRadius: '8px' }} />
+                        <img src={`https://api.chat.nexusnerds.com.br${msg.url}`} alt={msg.nomeArquivo} style={{ maxWidth: '200px', borderRadius: '8px' }} />
                       ) : msg.mimeType.startsWith('video/') ? (
                         <video controls preload="metadata" style={{ maxWidth: '200px', borderRadius: '8px' }}>
-                          <source src={`http://localhost:4007${msg.url}`} type={msg.mimeType} />
+                          <source src={`https://api.chat.nexusnerds.com.br${msg.url}`} type={msg.mimeType} />
                           Seu navegador não suporta o elemento de vídeo.
                         </video>
                       ) : (
-                        <a href={`http://localhost:4007${msg.url}`} download={msg.nomeArquivo} style={{ color: 'blue', textDecoration: 'underline' }}>
+                        <a href={`https://api.chat.nexusnerds.com.br${msg.url}`} download={msg.nomeArquivo} style={{ color: 'blue', textDecoration: 'underline' }}>
                           {msg.nomeArquivo}
                         </a>
                       )}

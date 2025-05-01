@@ -2,7 +2,7 @@ import { io } from "socket.io-client";
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-export const socket = io('http://localhost:4007', {
+export const socket = io('https://api.chat.nexusnerds.com.br', {
   transports: ['websocket'],
 });
 
