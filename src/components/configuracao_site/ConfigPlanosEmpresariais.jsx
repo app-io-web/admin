@@ -14,8 +14,8 @@ export default function ConfigPlanosEmpresariais() {
       const res = await fetch('https://api.configsite.nexusnerds.com.br/planos-empresariais');
       const data = await res.json();
       const registro = data.list?.[0];  // <-- AJUSTA PARA list
-      console.log('Dados recebidos:', data);
-      console.log('Primeiro registro:', registro);
+     /// console.log('Dados recebidos:', data);
+     /// console.log('Primeiro registro:', registro);
       if (!registro) return;
 
       setPlanos({

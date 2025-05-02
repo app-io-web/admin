@@ -9,7 +9,7 @@ export default function ChatComponent() {
   const usuario = JSON.parse(localStorage.getItem('usuario')) || {};
   const meuID = usuario?.idUnico;
 
-  console.log('Usuario do localStorage:', usuario);
+  //console.log('Usuario do localStorage:', usuario);
 
   const [mensagem, setMensagem] = useState('');
   const [conversas, setConversas] = useState({});
@@ -32,7 +32,7 @@ export default function ChatComponent() {
     const usuarioSistema = usuariosSistema.find(user => user.UnicID_User === meuID);
     const nomeLocalStorage = usuario.name;
     const nomeFinal = nomeLocalStorage || usuarioSistema?.name || 'Usuario Desconhecido';
-    console.log(`Meu nome resolvido: ${nomeFinal} (localStorage: ${nomeLocalStorage}, usuariosSistema: ${usuarioSistema?.name})`);
+    //console.log(`Meu nome resolvido: ${nomeFinal} (localStorage: ${nomeLocalStorage}, usuariosSistema: ${usuarioSistema?.name})`);
     return nomeFinal;
   }, [usuario, usuariosSistema, meuID]);
 
@@ -42,7 +42,7 @@ export default function ChatComponent() {
       const targetId = destinatario.isGroup ? destinatario.id : destinatario.UnicID_User;
       socket.emit('digitando', { de: meuID, para: targetId, isGroup: destinatario.isGroup }, () => {
         const endTime = performance.now();
-        console.log(`Tempo para enviar 'digitando': ${endTime - startTime}ms`);
+        //console.log(`Tempo para enviar 'digitando': ${endTime - startTime}ms`);
       });
 
       if (typingTimeoutRef.current) {
@@ -335,7 +335,7 @@ export default function ChatComponent() {
           ...prev,
           [idOutro]: (prev[idOutro] || 0) + 1,
         }));
-        console.log('Tentando tocar som de notificacao...');
+       // console.log('Tentando tocar som de notificacao...');
         const audio = new Audio();
         audio.src = '/notification.mp3';
         audio.onerror = () => {
@@ -359,7 +359,7 @@ export default function ChatComponent() {
       if (para === meuID || (isGroup && destinatario?.id === para && destinatario?.isGroup)) {
         setDigitandoUsuarios((prev) => {
           const endTime = performance.now();
-          console.log(`Tempo para processar 'digitando': ${endTime - startTime}ms`);
+          //console.log(`Tempo para processar 'digitando': ${endTime - startTime}ms`);
           return {
             ...prev,
             [de]: true,
@@ -392,7 +392,7 @@ export default function ChatComponent() {
 
     socket.on('mensagem_deletada', ({ messageId, de, para, usuarioNome, isGroup }) => {
       const idOutro = de === meuID ? para : de;
-      console.log(`Mensagem deletada recebida. Nome do usuario: ${usuarioNome}`); // Emoji removido
+      //console.log(`Mensagem deletada recebida. Nome do usuario: ${usuarioNome}`); // Emoji removido
       setConversas((prev) => {
         const conversaAtual = prev[idOutro] || [];
         const updatedConversa = conversaAtual.filter((msg, idx) => `${msg.timestamp}-${idx}` !== messageId);

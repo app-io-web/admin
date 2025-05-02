@@ -228,11 +228,11 @@ export default function ConsultaCliente() {
         }
       }
     
-      console.log('Consultando URL:', url);
+     // console.log('Consultando URL:', url);
       const response = await fetch(url);
       const data = await response.json();
     
-      console.log('Resposta da API:', data);
+     // console.log('Resposta da API:', data);
     
       if (data.message && data.message === 'sem registros!') {
         setSemRegistros(true);

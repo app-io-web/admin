@@ -84,7 +84,7 @@ export default function KanbanBoard() {
         const errorData = await res.json();
         throw new Error(`Erro ao salvar board: ${errorData.error || res.statusText}`);
       }
-      console.log('Board salvo com sucesso');
+      //console.log('Board salvo com sucesso');
     } catch (err) {
       console.error('Erro ao salvar board:', err);
       toast({ title: '❌ Erro ao salvar board', status: 'error', duration: 3000 });
@@ -107,7 +107,7 @@ export default function KanbanBoard() {
   const handleDragEnd = (event) => {
     const { active, over } = event;
     if (!over) {
-      console.log('Drag cancelado: sem destino');
+      //console.log('Drag cancelado: sem destino');
       return;
     }
 
@@ -119,7 +119,7 @@ export default function KanbanBoard() {
       return;
     }
 
-    console.log(`Movendo tarefa ${tarefaId} para coluna ${novaColuna}`);
+    //console.log(`Movendo tarefa ${tarefaId} para coluna ${novaColuna}`);
     setTarefas(tarefas.map(t =>
       t.id === tarefaId ? { ...t, status: novaColuna } : t
     ));

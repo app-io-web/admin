@@ -72,14 +72,11 @@ export default function GraficoCanceladosVirTimeline() {
 
   return (
     <Box
-      w={{ base: '90vw', md: '400px' }}
-      maxW="100%"
-      mx="auto"
-      p={{ base: 4, md: 6 }}
-      borderRadius="2xl"
+      w="100%"
+      p={4}
+      bg="whiteAlpha.100"
+      borderRadius="md"
       boxShadow="md"
-      bg={bg}
-      mt={4}
     >
       <Heading size="md" mb={4}>Cancelamentos - VIR TELECOM</Heading>
 

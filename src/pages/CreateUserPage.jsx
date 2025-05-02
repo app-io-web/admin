@@ -35,18 +35,15 @@ export default function CreateUserPage() {
         flexDirection="column"
         maxW="100%"
       >
-        <Box
-          mb={6}
-          position={{ base: 'static', md: 'fixed' }}
-          top="20px"
-          right="24px"
-          zIndex={30}
-          display={{ base: 'none', md: 'block' }}
-        >
-          <PerfilUsuarioDesktop
-            usuario={JSON.parse(localStorage.getItem('usuario')) || {}}
-          />
-        </Box>
+      <Box
+        position="fixed"
+        top="20px"
+        right="24px"
+        zIndex={30}
+        display={{ base: 'none', md: 'block' }}
+      >
+        <PerfilUsuarioDesktop usuario={usuario} />
+      </Box>
 
         {/* Formulário de Criação de Usuário */}
         <Box mb={6} flex="1" maxW="100%" overflowX="hidden">

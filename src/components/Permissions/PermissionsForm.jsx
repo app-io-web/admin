@@ -66,7 +66,7 @@ export default function PermissionsForm() {
       if (data?.list?.length > 0) {
         setRecentUsers(data.list);
       } else {
-        console.log('Nenhum usuário encontrado.');
+       // console.log('Nenhum usuário encontrado.');
       }
     } catch (error) {
       console.error('Erro ao buscar usuários recentes', error);
@@ -93,7 +93,7 @@ export default function PermissionsForm() {
   };
 
   const handleAccessPermissionsPage = () => {
-    console.log('Passando para a página de permissões: ', selectedUser); // console.log para depuração
+    //console.log('Passando para a página de permissões: ', selectedUser); // console.log para depuração
     navigate(`/permissions/${selectedUser?.UnicID_User}`, { state: { userDetails: selectedUser } }); // Passando detalhes do usuário via 'state'
   };
 

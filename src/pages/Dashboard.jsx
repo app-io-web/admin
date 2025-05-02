@@ -5,16 +5,23 @@ import BottomBar from '../components/layout/BottomBar';
 import PerfilUsuarioDesktop from '../components/layout/PerfilUsuarioDesktop';
 import { SimpleGrid, GridItem } from '@chakra-ui/react';
 
-import GraficoStatusClientes from '../components/charts/GraficoStatusClientes';
-import GraficoClientesAtivadosComparativo from '../components/charts/GraficoClientesAtivadosComparativo';
-import OrdensExecucaoCard from '../components/OrdensExecucaoCard';
-import StatusOnusCard from '../components/StatusOnusCard';
 import EmpresaSwitcher from '../components/admin/EmpresaSwitcher';
 import TarefasAtrasadasCard from '../components/tarefas/TarefasAtrasadasCard';
 import TarefasNaoAtrasadasCard from '../components/tarefas/TarefasNaoAtrasadasCard';
 
+// Gráficos padrão
+import GraficoStatusClientes from '../components/charts/GraficoStatusClientes';
+import GraficoClientesAtivadosComparativo from '../components/charts/GraficoClientesAtivadosComparativo';
+import OrdensExecucaoCard from '../components/OrdensExecucaoCard';
+import StatusOnusCard from '../components/StatusOnusCard';
 
+// Gráficos novos da pasta chart
+import GraficoClientesAtivadosMes from '../components/charts/chart/GraficoClientesAtivadosMes';
+import GraficoClientesBloqueadosMes from '../components/charts/chart/GraficoClientesBloqueadosMes';
+import GraficoClientesInstaladosMes from '../components/charts/chart/GraficoClientesInstaladosMes';
+import GraficodeQuantidadeOrdensAgendadas from '../components/charts/chart/GraficodeQuantidadeOrdensAgendadas';
 
+// VIR TELECOM
 import ClientesBloqueadosVirAccordion from '../components/ClientesBloqueadosVirAccordion';
 import GraficoComparativoClientesVir from '../components/charts/GraficoComparativoClientesVir';
 import GraficoCanceladosVirTimeline from '../components/charts/GraficoCanceladosVirTimeline';
@@ -25,11 +32,8 @@ export default function Dashboard() {
     return localStorage.getItem('empresaSelecionada') || '';
   });
 
-
-    // 🔥 Novos estados para saber se há tarefas
-    const [temAtrasadas, setTemAtrasadas] = useState(false);
-    const [temNaoAtrasadas, setTemNaoAtrasadas] = useState(false);
-  
+  const [temAtrasadas, setTemAtrasadas] = useState(false);
+  const [temNaoAtrasadas, setTemNaoAtrasadas] = useState(false);
 
   return (
     <Box display="flex" minH="100vh" position="relative">
@@ -76,28 +80,38 @@ export default function Dashboard() {
             </GridItem>
           </SimpleGrid>
         ) : (
-        <SimpleGrid columns={{ base: 1, md: 2 }} spacingX={{ base: 3, md: 4, lg: 7 }} spacingY={{ base: 2, md: 3 }}>
-          <GridItem w="full" maxW="400px">
-            <GraficoStatusClientes />
-          </GridItem>
-          <GridItem w="full" maxW="400px">
-            <GraficoClientesAtivadosComparativo />
-          </GridItem>
-          <GridItem w="full" maxW="400px">
-            <OrdensExecucaoCard />
-          </GridItem>
-          
-          {/* WRAPPER das ONUs + Tarefas */}
-          <GridItem w="full" maxW="400px" mx="auto">
-            <Box>
-              <StatusOnusCard />
-              <TarefasAtrasadasCard setTemAtrasadas={setTemAtrasadas} />
-              <TarefasNaoAtrasadasCard setTemNaoAtrasadas={setTemNaoAtrasadas} />
-            </Box>
-          </GridItem>
+          <>
+            {/* Linha 1 - Gráficos pequenos */}
+            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={6}>
+                <Box w="100%">
+                  <GraficoClientesAtivadosMes />
+                </Box>
+                <Box w="100%">
+                  <GraficoClientesBloqueadosMes />
+                </Box>
+                <Box w="100%">
+                  <GraficoClientesInstaladosMes />
+                </Box>
+              </SimpleGrid>
 
-        </SimpleGrid>
+              {/* Linha 2 - Gráficos grandes (2 por linha, se couber) */}
+              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6} mb={6}>
+                  <Box w="100%">
+                    <GraficodeQuantidadeOrdensAgendadas />
+                  </Box>
+                  <Box w="100%">
+                    <GraficoClientesAtivadosComparativo />
+                  </Box>
+                </SimpleGrid>
 
+
+              <Box>
+                <StatusOnusCard />
+                <TarefasAtrasadasCard setTemAtrasadas={setTemAtrasadas} />
+                <TarefasNaoAtrasadasCard setTemNaoAtrasadas={setTemNaoAtrasadas} />
+              </Box>
+
+          </>
         )}
       </Box>
 

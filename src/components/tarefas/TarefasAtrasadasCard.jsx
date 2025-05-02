@@ -42,7 +42,7 @@ export default function TarefasNaoAtrasadasCard({ setTemAtrasadas }) {
 
     // 🔥 3. Outro UseEffect só pra log se quiser
     useEffect(() => {
-      console.log('tarefasAtrasadas:', tarefasAtrasadas);
+      //console.log('tarefasAtrasadas:', tarefasAtrasadas);
     }, [tarefas]);
 
   const handleFecharModal = () => {
@@ -59,7 +59,7 @@ export default function TarefasNaoAtrasadasCard({ setTemAtrasadas }) {
       const res = await fetch(`https://api.kanban.nexusnerds.com.br/todos/${unicID_user}`);
       const data = await res.json();
       const filteredTarefas = (data.tarefas || []).filter(tarefa => !tarefa.kanban);
-      console.log('Tarefas carregadas:', filteredTarefas); // Log para depuração
+      //console.log('Tarefas carregadas:', filteredTarefas); // Log para depuração
       setTarefas(filteredTarefas);
     } catch (err) {
       console.error('Erro ao carregar tarefas:', err);
@@ -80,13 +80,13 @@ export default function TarefasNaoAtrasadasCard({ setTemAtrasadas }) {
       const resCurrent = await fetch(`https://api.kanban.nexusnerds.com.br/todos/${unicID_user}`);
       const currentData = await resCurrent.json();
       const currentTarefas = currentData.tarefas || [];
-      console.log('Tarefas atuais do backend:', currentTarefas);
+      //console.log('Tarefas atuais do backend:', currentTarefas);
 
       const updatedTarefas = [
         ...currentTarefas.filter(tarefa => tarefa.kanban),
         ...novasTarefas.filter(tarefa => !tarefa.kanban),
       ];
-      console.log('Tarefas enviadas ao backend:', updatedTarefas);
+      //console.log('Tarefas enviadas ao backend:', updatedTarefas);
 
       const res = await fetch('https://api.kanban.nexusnerds.com.br/todos', {
         method: 'POST',
@@ -185,7 +185,7 @@ export default function TarefasNaoAtrasadasCard({ setTemAtrasadas }) {
   };
 
   useEffect(() => {
-    console.log('tarefasAtrasadas:', tarefasAtrasadas);
+    //console.log('tarefasAtrasadas:', tarefasAtrasadas);
     if (setTemAtrasadas) {
       setTemAtrasadas(tarefasAtrasadas.length > 0);
     }

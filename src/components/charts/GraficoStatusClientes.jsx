@@ -78,16 +78,13 @@ export default function GraficoStatusClientesMaxFibra() {
   const cores = [corAtivo, corBloqueado];
 
   return (
-      <Box
-        w={{ base: '90vw', md: '400px' }}
-        maxW="100%"
-        mx="auto"
-        p={{ base: 4, md: 6 }}
-        borderRadius="2xl"
-        boxShadow="md"
-        bg={bgBox}
-        mt={4}
-      >
+    <Box
+      w="100%"
+      p={4}
+      bg="whiteAlpha.100"
+      borderRadius="md"
+      boxShadow="md"
+    >
 
       <Flex justify="space-between" align="center" mb={7}>
         <Heading size="md">Clientes</Heading>

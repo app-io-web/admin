@@ -20,9 +20,15 @@ export default function FechamentoDiarioPage() {
         overflowX="hidden"
         overflowY="auto"
       >
-        <Box position="fixed" top="20px" right="24px" zIndex={30} display={{ base: 'none', md: 'block' }}>
-          <PerfilUsuarioDesktop usuario={usuario} />
-        </Box>
+      <Box
+        position="fixed"
+        top="20px"
+        right="24px"
+        zIndex={30}
+        display={{ base: 'none', md: 'block' }}
+      >
+        <PerfilUsuarioDesktop usuario={usuario} />
+      </Box>
 
         <Heading fontSize={{ base: 'xl', md: '2xl' }} mb={6}>
           Fechamento Diário

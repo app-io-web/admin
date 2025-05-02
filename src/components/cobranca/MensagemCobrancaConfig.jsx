@@ -132,7 +132,7 @@ export default function MensagemCobrancaConfig() {
       if (!res.ok) throw new Error('Falha no upload');
 
       const result = await res.json();
-      console.log("Resposta da API:", result); // Log para verificar o formato da resposta
+      //console.log("Resposta da API:", result); // Log para verificar o formato da resposta
 
       // Usando o 'path' para construir a URL final
       const path = result?.[0]?.path;

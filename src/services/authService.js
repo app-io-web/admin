@@ -6,8 +6,8 @@ export async function login(email, password) {
     const where = `(email-login,eq,${email})~and(password,eq,${password})`;
     const url = `${BASE_URL}/api/v2/tables/mn8xn7q4lsvk963/records?where=${encodeURIComponent(where)}`;
 
-    console.log('🔗 URL da requisição:', url);
-    console.log('🔐 Token enviado:', TOKEN);
+    //console.log('🔗 URL da requisição:', url);
+    //console.log('🔐 Token enviado:', TOKEN);
 
     const res = await fetch(url, {
       method: 'GET',
@@ -17,7 +17,7 @@ export async function login(email, password) {
       },
     });
 
-    console.log('📡 Status da resposta:', res.status);
+    //console.log('📡 Status da resposta:', res.status);
 
     if (!res.ok) {
       const erroTexto = await res.text();
@@ -26,11 +26,11 @@ export async function login(email, password) {
     }
 
     const contentType = res.headers.get("content-type");
-    console.log('📦 Content-Type:', contentType);
+    //console.log('📦 Content-Type:', contentType);
 
     const data = await res.json();
 
-    console.log('✅ Dados retornados:', data);
+    //console.log('✅ Dados retornados:', data);
 
     
 

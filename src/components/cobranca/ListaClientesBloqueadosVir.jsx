@@ -123,8 +123,8 @@ export default function ListaClientesBloqueadosVir() {
 
   const aplicarVariaveis = (template, cliente) => {
     // Adicionando logs para verificar se a variável está sendo substituída corretamente
-    console.log('Template Original:', template);  // Exibe o template original
-    console.log('Dados do Cliente:', cliente);  // Exibe os dados do cliente, incluindo CPF_CNPJ
+   // console.log('Template Original:', template);  // Exibe o template original
+   // console.log('Dados do Cliente:', cliente);  // Exibe os dados do cliente, incluindo CPF_CNPJ
     
     // A função de substituição
     return template

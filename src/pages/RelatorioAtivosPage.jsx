@@ -30,9 +30,15 @@ export default function RelatorioAtivacaoPage() {
           <Heading fontSize={{ base: 'xl', md: '2xl' }}>
             Relatório de Ativados
           </Heading>
-          <Box display={{ base: 'none', md: 'block' }}>
-            <PerfilUsuarioDesktop usuario={usuario} />
-          </Box>
+            <Box
+              position="fixed"
+              top="20px"
+              right="24px"
+              zIndex={30}
+              display={{ base: 'none', md: 'block' }}
+            >
+              <PerfilUsuarioDesktop usuario={usuario} />
+            </Box>
         </HStack>
 
         <Box mb={6}>

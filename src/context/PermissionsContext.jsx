@@ -69,10 +69,10 @@ export const PermissionsProvider = ({ children }) => {
       setIsLoading(true);
       try {
         const userDetails = JSON.parse(localStorage.getItem('usuario'));
-        console.log('Usuário obtido do localStorage no PermissionsProvider:', userDetails);
-        console.log('ID único sendo usado:', userDetails?.idUnico);
+        //console.log('Usuário obtido do localStorage no PermissionsProvider:', userDetails);
+        //console.log('ID único sendo usado:', userDetails?.idUnico);
         const response = await fetchUserPermissions();
-        console.log('Permissões retornadas da API:', response);
+        //console.log('Permissões retornadas da API:', response);
         setPermissions(response);
       } catch (error) {
         console.error('Erro ao buscar permissões:', error);
@@ -87,7 +87,7 @@ export const PermissionsProvider = ({ children }) => {
 
   const hasPermission = (permission) => {
     const hasPerm = permissions[permission] === true;
-    console.log(`Verificando permissão ${permission}:`, hasPerm, 'Valor no estado:', permissions[permission]);
+    //console.log(`Verificando permissão ${permission}:`, hasPerm, 'Valor no estado:', permissions[permission]);
     return hasPerm;
   };
 

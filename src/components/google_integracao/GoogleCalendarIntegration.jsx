@@ -78,7 +78,13 @@ export default function GoogleCalendarIntegration() {
   return (
     <Box display="flex" minH="100vh" position="relative">
       <SideBar />
-      <Box position="fixed" top="20px" right="24px" zIndex={30} display={{ base: 'none', md: 'block' }}>
+      <Box
+        position="fixed"
+        top="20px"
+        right="24px"
+        zIndex={30}
+        display={{ base: 'none', md: 'block' }}
+      >
         <PerfilUsuarioDesktop usuario={usuario} />
       </Box>
 

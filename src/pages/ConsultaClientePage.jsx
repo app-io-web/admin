@@ -32,14 +32,14 @@ export default function ConsultaClientePage() {
           >
             Consulta de Cliente Vir Telecom
           </Heading>
-          <Box
-            position="fixed"
-            top="20px"
-            right="24px"
-            zIndex={30}  // 👈 Adiciona isso
-            display={{ base: 'none', md: 'block' }}
+            <Box
+              position="fixed"
+              top="20px"
+              right="24px"
+              zIndex={30}
+              display={{ base: 'none', md: 'block' }}
             >
-            <PerfilUsuarioDesktop usuario={usuario} />
+              <PerfilUsuarioDesktop usuario={usuario} />
             </Box>
         </HStack>
 

@@ -31,7 +31,7 @@ export default function FormCreateUser({ onUserCreated }) {
   const textColor = useColorModeValue('black', 'white');
 
   useEffect(() => {
-    console.log('Empresas selecionadas atualizadas:', company);
+    //console.log('Empresas selecionadas atualizadas:', company);
   }, [company]);
 
   const handleCheckboxChange = (selectedCompanies) => {
@@ -66,7 +66,7 @@ export default function FormCreateUser({ onUserCreated }) {
   
       // Enviando dados para criar o usuário na tabela principal
       const response = await createUser(newUserData); // Chama a API para criar o usuário
-      console.log('Resposta da API:', response); // Log da resposta da API
+      //console.log('Resposta da API:', response); // Log da resposta da API
   
       // Agora, envia o UnicID_User para a outra tabela (permissões)
       const permissionsResponse = await fetch('https://nocodb.nexusnerds.com.br/api/v2/tables/mzekdm0ptp4sqlq/records', {
@@ -82,7 +82,7 @@ export default function FormCreateUser({ onUserCreated }) {
       });
   
       const permissionsData = await permissionsResponse.json();
-      console.log('Resposta da API de permissões:', permissionsData); // Exibe a resposta da API
+      //console.log('Resposta da API de permissões:', permissionsData); // Exibe a resposta da API
   
       toast({
         title: 'Usuário criado',

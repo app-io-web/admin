@@ -43,7 +43,7 @@ export default function ToDoList() {
       const res = await fetch(`https://api.kanban.nexusnerds.com.br/todos/${unicID_user}`);
       const data = await res.json();
       const filteredTarefas = (data.tarefas || []).filter(tarefa => !tarefa.kanban);
-      console.log('Tarefas carregadas:', filteredTarefas); // Log para depuração
+      //console.log('Tarefas carregadas:', filteredTarefas); // Log para depuração
       setTarefas(filteredTarefas);
     } catch (err) {
       console.error('Erro ao carregar tarefas:', err);
@@ -56,13 +56,13 @@ export default function ToDoList() {
       const resCurrent = await fetch(`https://api.kanban.nexusnerds.com.br/todos/${unicID_user}`);
       const currentData = await resCurrent.json();
       const currentTarefas = currentData.tarefas || [];
-      console.log('Tarefas atuais do backend:', currentTarefas);
+      //console.log('Tarefas atuais do backend:', currentTarefas);
   
       const updatedTarefas = [
         ...currentTarefas.filter(tarefa => tarefa.kanban),
         ...novasTarefas.filter(tarefa => !tarefa.kanban),
       ];
-      console.log('Tarefas enviadas ao backend:', updatedTarefas);
+      //console.log('Tarefas enviadas ao backend:', updatedTarefas);
   
       const res = await fetch('https://api.kanban.nexusnerds.com.br/todos', {
         method: 'POST',
@@ -161,7 +161,7 @@ export default function ToDoList() {
   };
 
   const handleDelete = (id) => {
-    console.log('Deletando tarefa com ID:', id); // Log para depuração
+    //console.log('Deletando tarefa com ID:', id); // Log para depuração
     setTarefas(tarefas.filter(t => t.id !== id));
     setShouldSave(true);
   };

@@ -14,9 +14,15 @@ export default function ChatPage() {
 
       <Box flex="1" display="flex" flexDirection="column" overflowY="auto">
         {/* Perfil no Desktop */}
-        <Box position="fixed" top="10px" right="24px" zIndex={30} display={{ base: 'none', md: 'block' }}>
-          <PerfilUsuarioDesktop usuario={usuario} />
-        </Box>
+      <Box
+        position="fixed"
+        top="20px"
+        right="24px"
+        zIndex={30}
+        display={{ base: 'none', md: 'block' }}
+      >
+        <PerfilUsuarioDesktop usuario={usuario} />
+      </Box>
 
         {/* Área principal */}
         <Box

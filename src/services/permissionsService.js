@@ -52,7 +52,7 @@ const PERMISSIONS_LIST = [
   
   export const fetchUserPermissions = async () => {
     const userDetails = JSON.parse(localStorage.getItem('usuario'));
-    console.log('Usuário obtido do localStorage:', userDetails);
+ //   console.log('Usuário obtido do localStorage:', userDetails);
   
     if (!userDetails?.idUnico) {
       console.error('Erro: Usuário não encontrado no localStorage.');
@@ -71,21 +71,21 @@ const PERMISSIONS_LIST = [
       );
   
       const data = await response.json();
-      console.log('Resposta da API:', data);
+ //     console.log('Resposta da API:', data);
   
       if (data?.list?.length > 0) {
         const record = data.list[0];
         const permTotal = record['PERM-[TOTAL]']?.[0];
         if (permTotal) {
           const permissions = permTotal.Permissões || {};
-          console.log('Permissões retornadas (antes de retornar):', permissions);
+ //         console.log('Permissões retornadas (antes de retornar):', permissions);
           return permissions;
         } else {
           console.error('Erro: Permissões não encontradas no registro.');
           throw new Error('Permissões não encontradas.');
         }
       } else {
-        console.log('Nenhum registro encontrado, criando novo...');
+ //       console.log('Nenhum registro encontrado, criando novo...');
         const newRecordPayload = {
           UnicID_User: userDetails.idUnico,
           'PERM-[TOTAL]': [
@@ -112,11 +112,11 @@ const PERMISSIONS_LIST = [
         );
   
         const createdData = await createResponse.json();
-        console.log('Novo registro criado:', createdData);
+ //       console.log('Novo registro criado:', createdData);
   
         if (createdData && createdData['PERM-[TOTAL]']?.[0]?.Permissões) {
           const newPermissions = createdData['PERM-[TOTAL]'][0].Permissões;
-          console.log('Permissões do novo registro:', newPermissions);
+  ///        console.log('Permissões do novo registro:', newPermissions);
           return newPermissions;
         } else {
           console.error('Erro: Falha ao criar novo registro de permissões.');

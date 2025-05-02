@@ -52,7 +52,7 @@ export default function CobrancaAutomaticaVIR({ clientes = [], whatsappStatus = 
 };
 
 const enviarMensagem = async (numero, mensagem, mediaUrl = null) => {
-    console.log('Iniciando envio de mensagem para:', numero);
+    //console.log('Iniciando envio de mensagem para:', numero);
 
     const url = `https://api.nexusnerds.com.br/message/sendText/${instancia}`;
     const payload = {
@@ -88,7 +88,7 @@ const enviarMensagem = async (numero, mensagem, mediaUrl = null) => {
         return; // Impede o envio de texto se a mídia for enviada
     }
 
-    console.log('📦 Enviando para API:', url, payload);
+    //console.log('📦 Enviando para API:', url, payload);
 
     const res = await fetch(url, {
         method: 'POST',
@@ -106,11 +106,11 @@ const enviarMensagem = async (numero, mensagem, mediaUrl = null) => {
         throw new Error(json?.response?.message?.[0] || json?.message || 'Erro ao enviar mensagem');
     }
 
-    console.log('📨 Mensagem enviada com sucesso:', numero, json);
+    //console.log('📨 Mensagem enviada com sucesso:', numero, json);
 };
 
 const enviarMedia = async (payload) => {
-    console.log("📦 Enviando mídia:", payload);
+    //console.log("📦 Enviando mídia:", payload);
 
     const mediaRes = await fetch(`https://api.nexusnerds.com.br/message/sendMedia/${instancia}`, {
         method: 'POST',
@@ -128,7 +128,7 @@ const enviarMedia = async (payload) => {
         throw new Error(mediaJson?.response?.message?.[0] || mediaJson?.message || 'Erro ao enviar mídia');
     }
 
-    console.log('📨 Mídia enviada com sucesso:', mediaJson);
+    //console.log('📨 Mídia enviada com sucesso:', mediaJson);
 };
 
 
@@ -159,7 +159,7 @@ const registrarCobrançaNoLogVIR = async (cliente, status) => {
     const existingRecord = responseData.list.find(record => record.Data === data.Data);
 
     if (existingRecord) {
-      console.log('Registro encontrado:', existingRecord);
+      //console.log('Registro encontrado:', existingRecord);
 
       // Se já houver um log para a data, garante que o campo [LOG]-[VIR_TELECOM] seja um array
       if (!Array.isArray(existingRecord['[LOG]-[VIR_TELECOM]'])) {
@@ -188,9 +188,9 @@ const registrarCobrançaNoLogVIR = async (cliente, status) => {
         throw new Error(errorResponse?.message || 'Erro ao atualizar log');
       }
 
-      console.log('Log de cobrança VIR TELECOM atualizado com sucesso');
+      //console.log('Log de cobrança VIR TELECOM atualizado com sucesso');
     } else {
-      console.log('Nenhum registro encontrado para essa data. Criando um novo...');
+      //console.log('Nenhum registro encontrado para essa data. Criando um novo...');
 
       // Se não houver log para a data, cria um novo
       await fetch(url, {
@@ -202,7 +202,7 @@ const registrarCobrançaNoLogVIR = async (cliente, status) => {
         body: JSON.stringify(data),
       });
 
-      console.log('Novo log de cobrança VIR TELECOM registrado com sucesso');
+      //console.log('Novo log de cobrança VIR TELECOM registrado com sucesso');
     }
   } catch (error) {
     console.error('Erro ao conectar com a API ou registrar log VIR TELECOM:', error);
@@ -222,12 +222,12 @@ const executarCobranca = async () => {
   setCarregando(true);
 
   try {
-    console.log("Buscando dados da instância...");
+    //console.log("Buscando dados da instância...");
     const instRes = await fetch(`https://nocodb.nexusnerds.com.br/api/v2/tables/m3xqm7fsjhg6m3g/records?where=(Instance_Name,eq,${instancia})`, {
       headers: { 'xc-token': import.meta.env.VITE_NOCODB_TOKEN }
     });
     const instData = await instRes.json();
-    console.log('Resposta da API de Instância:', instData);
+    //console.log('Resposta da API de Instância:', instData);
 
     const dadosInstancia = instData?.list?.[0];
     if (!dadosInstancia) throw new Error(`Instância "${instancia}" não encontrada.`);
@@ -247,16 +247,16 @@ const executarCobranca = async () => {
     const empresa = dadosInstancia.UnicID;
     const chaveEmpresa = empresaSelecionada === 'Max Fibra' ? 'MAX_FIBRA' : 'VIR_TELECOM';
 
-    console.log("Chave da empresa:", chaveEmpresa);
+    //console.log("Chave da empresa:", chaveEmpresa);
 
     // Buscando a mensagem personalizada do NocoDB
-    console.log("Buscando mensagem personalizada...");
+    //console.log("Buscando mensagem personalizada...");
     const msgRes = await fetch(`https://nocodb.nexusnerds.com.br/api/v2/tables/mm2wytmovgp5cm6/records`, {
       headers: { 'xc-token': import.meta.env.VITE_NOCODB_TOKEN }
     });
 
     const msgData = await msgRes.json();
-    console.log('Resposta da API de mensagem personalizada:', msgData);
+    //console.log('Resposta da API de mensagem personalizada:', msgData);
 
     const mensagemJson = msgData?.list?.[0]?.[chaveEmpresa];
     let mensagem = mensagemJson?.mensagem;
@@ -273,7 +273,7 @@ const executarCobranca = async () => {
       const numeroFormatado = `55${telLimpo}`;
       const temWhats = whatsappStatus[numeroFormatado] === true;
 
-      console.log('Enviando para número:', numeroFormatado, 'WhatsApp Status:', temWhats);
+      //console.log('Enviando para número:', numeroFormatado, 'WhatsApp Status:', temWhats);
 
       if (telLimpo?.length >= 10 && temWhats) {
         let msg = aplicarVariaveis(mensagem || mensagemTemplate, cliente);  // Aplicar as variáveis aqui

@@ -85,11 +85,11 @@ export default function ConectarWhatsApp() {
 
     useEffect(() => {
         const verificarStatus = async () => {
-          console.log('🔍 useEffect RODOU');
+          //console.log('🔍 useEffect RODOU');
           try {
             const statusAtualizado = await buscarInstanciaStatus(instancia);
             const dados = statusAtualizado?.instance;
-            console.log('📡 STATUS BRUTO:', statusAtualizado);
+           // console.log('📡 STATUS BRUTO:', statusAtualizado);
       
             setStatusInfo(dados || {});
             setNumeroConectado(dados?.phone || '');
@@ -112,7 +112,7 @@ export default function ConectarWhatsApp() {
       
             // 🔁 se estiver em connecting, tenta pegar o QR
             if (estado === 'connecting') {
-              console.log('🔄 Instância em connecting, tentando pegar QR com /connect...');
+ //             console.log('🔄 Instância em connecting, tentando pegar QR com /connect...');
               const conectado = await conectarInstancia(instancia);
               const qr = conectado?.base64;
               if (qr?.startsWith('data:image')) {
@@ -137,7 +137,7 @@ export default function ConectarWhatsApp() {
       useEffect(() => {
         if (!qrCode || estaConectado(statusInfo)) return;
       
-        console.log('⏳ Iniciando verificação automática enquanto QR está ativo...');
+//        console.log('⏳ Iniciando verificação automática enquanto QR está ativo...');
       
         const intervalo = setInterval(async () => {
           try {
@@ -146,7 +146,7 @@ export default function ConectarWhatsApp() {
             const estado = dados?.state || dados?.status || '';
             const temOwner = !!dados?.owner;
       
-            console.log('📡 Verificação automática: estado:', estado);
+//            console.log('📡 Verificação automática: estado:', estado);
       
             if ((estado === 'open' || estado === 'connected') && temOwner) {
               setQrCode('');
@@ -176,7 +176,7 @@ export default function ConectarWhatsApp() {
       
       useEffect(() => {
         if (status?.toLowerCase() === 'close') {
-          console.log('🔄 Status CLOSE detectado — forçando reconexão...');
+//          console.log('🔄 Status CLOSE detectado — forçando reconexão...');
           (async () => {
             try {
               await desconectarInstancia(instancia);
@@ -221,7 +221,7 @@ export default function ConectarWhatsApp() {
 
   
       const salvarNoNocoDB = async () => {
-        console.log('📝 Verificando se já existe no NocoDB...');
+//        console.log('📝 Verificando se já existe no NocoDB...');
         const query = encodeURIComponent(`(Instance_Name,eq,${instancia})`);
         const checkRes = await fetch(
           `${BASE_NOCODB}/api/v2/tables/m3xqm7fsjhg6m3g/records?where=${query}&limit=1`,
@@ -237,7 +237,7 @@ export default function ConectarWhatsApp() {
         const jaExiste = checkData?.list?.length > 0;
       
         if (!jaExiste) {
-          console.log('✅ Não existe, salvando no NocoDB...');
+ //         console.log('✅ Não existe, salvando no NocoDB...');
           await fetch(`${BASE_NOCODB}/api/v2/tables/m3xqm7fsjhg6m3g/records`, {
             method: 'POST',
             headers: {
@@ -252,9 +252,9 @@ export default function ConectarWhatsApp() {
                 Enviar_CBO_Interna: enviarCboInterna === 'sim'
               }),
           });
-          console.log('✅ Instância salva!');
+//          console.log('✅ Instância salva!');
         } else {
-          console.log('⚠️ Já existe no banco, não salvando novamente.');
+//          console.log('⚠️ Já existe no banco, não salvando novamente.');
         }
       };
       
@@ -271,7 +271,7 @@ export default function ConectarWhatsApp() {
               },
             });
             const data = await res.json();
-            console.log("Resultado da busca da instância:", data)
+  //          console.log("Resultado da busca da instância:", data)
 
             if (!data?.list?.length) {
                 console.error("❌ Nenhum registro encontrado com a instância:", instancia);
@@ -303,7 +303,7 @@ export default function ConectarWhatsApp() {
 
     const buscarOuCriar = async () => {
             setCarregando(true);
-            console.log('🚀 Iniciando processo para buscar ou criar instância:', instancia);
+//            console.log('🚀 Iniciando processo para buscar ou criar instância:', instancia);
         
             try {
             // Verifica no NocoDB
@@ -321,14 +321,14 @@ export default function ConectarWhatsApp() {
             const dados = await res.json();
             const existeNoBanco = dados?.list?.length > 0;
         
-            console.log('📦 Resultado do NocoDB:', dados);
+          //  console.log('📦 Resultado do NocoDB:', dados);
         
             // Se não tem no NocoDB, segue o fluxo com a API
             if (!existeNoBanco) {
-                console.log('🔍 Não existe no banco. Verificando na Evolution...');
+              //  console.log('🔍 Não existe no banco. Verificando na Evolution...');
         
                 const acao = await verificarOuRecriarInstancia(instancia);
-                console.log(`⚙️ Ação recomendada pela API: ${acao}`);
+                //console.log(`⚙️ Ação recomendada pela API: ${acao}`);
         
                 if (acao === 'JA_CONECTADA') {
                 toast({
@@ -352,14 +352,14 @@ export default function ConectarWhatsApp() {
                     isClosable: true,
                 });
                 await criarInstancia(instancia);
-                console.log('✅ Instância criada na Evolution');
+               // console.log('✅ Instância criada na Evolution');
                 }
         
                 await desconectarInstancia(instancia);
                 await new Promise(resolve => setTimeout(resolve, 1500));
                 const conectado = await conectarInstancia(instancia);
         
-                console.log('📥 Retorno da conexão:', conectado);
+               // console.log('📥 Retorno da conexão:', conectado);
                 const qr = conectado?.base64;
         
                 if (qr?.startsWith('data:image')) {
@@ -417,7 +417,7 @@ export default function ConectarWhatsApp() {
             } else {
                 // Caso já esteja no banco, tenta buscar o status
                 const statusAPI = await buscarInstanciaStatus(instancia);
-                console.log('📡 Status da instância:', statusAPI);
+              //  console.log('📡 Status da instância:', statusAPI);
                 
                 const state = statusAPI?.instance?.state;
                 const temOwner = !!statusAPI?.instance?.owner;
@@ -445,7 +445,7 @@ export default function ConectarWhatsApp() {
                   setQrCode(qr);
                   setStatus('qrcode');
                 } else if (state === 'connecting') {
-                  console.log('⏳ Instância em processo de conexão, tentando buscar QR...');
+                  //console.log('⏳ Instância em processo de conexão, tentando buscar QR...');
                   const conectado = await conectarInstancia(instancia);
                   const novoQr = conectado?.base64;
               
@@ -509,7 +509,7 @@ export default function ConectarWhatsApp() {
             setCarregando(true);
           
             try {
-              console.log('🔄 Recarregando conexão...');
+              //console.log('🔄 Recarregando conexão...');
               await desconectarInstancia(instancia); // <-- força reset da sessão
               await new Promise(resolve => setTimeout(resolve, 1000)); // espera 1s
           
@@ -580,7 +580,7 @@ export default function ConectarWhatsApp() {
 
         // Função chamada ao clicar em "Enviar" dentro do modal
         async function handleEnviarTeste() {
-          console.log('Número Teste:', numeroTeste); // Verifique o valor de numeroTeste
+         // console.log('Número Teste:', numeroTeste); // Verifique o valor de numeroTeste
 
           // Se o número for inválido (menos ou mais que 11 caracteres), mostramos um erro e não enviamos.
           if (!numeroTeste || numeroTeste.length !== 11) {
@@ -611,7 +611,7 @@ export default function ConectarWhatsApp() {
               });
 
               const json = await res.json();
-              console.log('📨 Retorno da API:', json);
+              //console.log('📨 Retorno da API:', json);
 
               // Se a mensagem for enviada com sucesso, mostramos uma notificação de sucesso
               if (res.ok || json?.key) {
@@ -676,11 +676,11 @@ export default function ConectarWhatsApp() {
   
       useEffect(() => {
         const verificarStatus = async () => {
-          console.log('🔍 useEffect RODOU');
+          //console.log('🔍 useEffect RODOU');
           try {
             const statusAtualizado = await buscarInstanciaStatus(instancia);
             const dados = statusAtualizado?.instance;
-            console.log('📡 STATUS BRUTO:', statusAtualizado);
+            //console.log('📡 STATUS BRUTO:', statusAtualizado);
       
             // Atualiza os estados visuais
             setStatusInfo(dados || {});
@@ -822,10 +822,6 @@ export default function ConectarWhatsApp() {
                                 return;
                             }
 
-                            console.log('✅ PATCH payload:', {
-                                Id: recordId,
-                                Enviar_CBO_Interna: valorBooleano
-                            });
 
                             const patchRes = await fetch(`${BASE_NOCODB}/api/v2/tables/m3xqm7fsjhg6m3g/records`, {
                                 method: 'PATCH',

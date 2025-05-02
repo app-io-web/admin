@@ -69,7 +69,7 @@ export default function CobrancaAutomatica({ clientes = [], whatsappStatus = {} 
       return;
     }
 
-    console.log('📦 Enviando para API:', url, payload);
+    //console.log('📦 Enviando para API:', url, payload);
 
     const res = await fetch(url, {
       method: 'POST',
@@ -87,7 +87,7 @@ export default function CobrancaAutomatica({ clientes = [], whatsappStatus = {} 
       throw new Error(json?.response?.message?.[0] || json?.message || 'Erro ao enviar mensagem');
     }
 
-    console.log('📨 Mensagem enviada com sucesso:', numero, json);
+    //console.log('📨 Mensagem enviada com sucesso:', numero, json);
   };
 
   const isValidUrl = (urlString) => {
@@ -109,7 +109,7 @@ export default function CobrancaAutomatica({ clientes = [], whatsappStatus = {} 
       },
     };
 
-    console.log("📦 Enviando mídia:", mediaPayload);
+    //console.log("📦 Enviando mídia:", mediaPayload);
 
     const mediaRes = await fetch(`https://api.nexusnerds.com.br/message/sendMedia/${instancia}`, {
       method: 'POST',
@@ -127,7 +127,7 @@ export default function CobrancaAutomatica({ clientes = [], whatsappStatus = {} 
       throw new Error(mediaJson?.response?.message?.[0] || mediaJson?.message || 'Erro ao enviar mídia');
     }
 
-    console.log('📨 Mídia enviada com sucesso:', mediaJson);
+    //console.log('📨 Mídia enviada com sucesso:', mediaJson);
   };
 
   const registrarCobrançaNoLog = async (cliente, status) => {
@@ -187,9 +187,9 @@ export default function CobrancaAutomatica({ clientes = [], whatsappStatus = {} 
           throw new Error(errorResponse?.message || 'Erro ao atualizar log');
         }
   
-        console.log('Log de cobrança MAX FIBRA atualizado com sucesso');
+        //console.log('Log de cobrança MAX FIBRA atualizado com sucesso');
       } else {
-        console.log('Nenhum registro encontrado para essa data. Criando um novo...');
+        //console.log('Nenhum registro encontrado para essa data. Criando um novo...');
   
         // Se não houver log para a data, cria um novo
         await fetch(url, {
@@ -201,7 +201,7 @@ export default function CobrancaAutomatica({ clientes = [], whatsappStatus = {} 
           body: JSON.stringify(data),
         });
   
-        console.log('Novo log de cobrança MAX FIBRA registrado com sucesso');
+        //console.log('Novo log de cobrança MAX FIBRA registrado com sucesso');
       }
     } catch (error) {
       console.error('Erro ao conectar com a API ou registrar log:', error);

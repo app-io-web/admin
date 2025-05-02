@@ -33,7 +33,7 @@ export default function ConfigVendedores() {
   const salvar = async (dadosParaSalvar = vendedores) => {
     try {
       const payload = { Id: recordId, Vendedor: dadosParaSalvar };
-      console.log('📦 Payload enviado:', payload);
+      //console.log('📦 Payload enviado:', payload);
       const res = await fetch('https://api.configsite.nexusnerds.com.br/vendedor', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },

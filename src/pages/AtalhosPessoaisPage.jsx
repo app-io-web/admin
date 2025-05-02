@@ -12,7 +12,15 @@ export default function AtalhosPessoaisPage() {
       <SideBar />
 
       <Box flex="1" p={4}>
+      <Box
+        position="fixed"
+        top="20px"
+        right="24px"
+        zIndex={30}
+        display={{ base: 'none', md: 'block' }}
+      >
         <PerfilUsuarioDesktop usuario={usuario} />
+      </Box>
         <AtalhosPessoais />
       </Box>
 

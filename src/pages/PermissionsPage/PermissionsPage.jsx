@@ -99,7 +99,7 @@ const PermissionsPage = () => {
     const fetchPermissions = async () => {
       setIsLoading(true);
       try {
-        console.log('Buscando permissões para UnicID_User:', userDetails?.UnicID_User);
+       // console.log('Buscando permissões para UnicID_User:', userDetails?.UnicID_User);
         const response = await fetch(
           `https://nocodb.nexusnerds.com.br/api/v2/tables/mzekdm0ptp4sqlq/records?where=(UnicID_User,eq,${userDetails?.UnicID_User})`,
           {
@@ -111,7 +111,7 @@ const PermissionsPage = () => {
         );
   
         const data = await response.json();
-        console.log('Resposta da API (busca inicial):', JSON.stringify(data, null, 2));
+        //console.log('Resposta da API (busca inicial):', JSON.stringify(data, null, 2));
   
         if (data?.list?.length > 0) {
           const record = data.list[0];
@@ -128,7 +128,7 @@ const PermissionsPage = () => {
               }), {})
             );
           } else {
-            console.log('Nenhum item de permissão válido encontrado, criando novo...');
+            //console.log('Nenhum item de permissão válido encontrado, criando novo...');
             const newPermItem = {
               UnicID_User: userDetails.UnicID_User,
               Permissões: PERMISSIONS_LIST.reduce((acc, perm) => ({
@@ -160,13 +160,13 @@ const PermissionsPage = () => {
             }
   
             const updatedData = await updateResponse.json();
-            console.log('Resposta da API (após atualização):', JSON.stringify(updatedData, null, 2));
+            //console.log('Resposta da API (após atualização):', JSON.stringify(updatedData, null, 2));
   
             setRecordId(record.Id);
             setPermissions(newPermItem.Permissões);
           }
         } else {
-          console.log('Nenhum registro encontrado, criando novo...');
+          //console.log('Nenhum registro encontrado, criando novo...');
           const newRecordPayload = {
             UnicID_User: userDetails.UnicID_User,
             'PERM-[TOTAL]': [
@@ -197,7 +197,7 @@ const PermissionsPage = () => {
           }
   
           const createdData = await createResponse.json();
-          console.log('Resposta da API (novo registro):', JSON.stringify(createdData, null, 2));
+          //console.log('Resposta da API (novo registro):', JSON.stringify(createdData, null, 2));
   
           if (!createdData.Id) {
             throw new Error('ID do registro não retornado após criação');
@@ -346,16 +346,16 @@ const PermissionsPage = () => {
         overflowX="hidden"
         overflowY="auto"
       >
-        <Box
-          position="fixed"
-          top="20px"
-          right="24px"
-          zIndex={30}
-          display={{ base: 'none', md: 'block' }}
-        >
-          <PerfilUsuarioDesktop usuario={usuario} />
-        </Box>
-
+      <Box
+        position="fixed"
+        top="20px"
+        right="24px"
+        zIndex={30}
+        display={{ base: 'none', md: 'block' }}
+      >
+        <PerfilUsuarioDesktop usuario={usuario} />
+      </Box>
+      
         <Box p={6} borderWidth={1} borderRadius="lg" maxWidth="600px" margin="0 auto">
           {isLoading ? (
             <Spinner size="lg" />

@@ -118,7 +118,7 @@ export default function TarefasNaoAtrasadasCard({ setTemNaoAtrasadas }) {
   };
 
   useEffect(() => {
-    console.log('tarefasNaoAtrasadas:', tarefasNaoAtrasadas);
+    //console.log('tarefasNaoAtrasadas:', tarefasNaoAtrasadas);
     if (setTemNaoAtrasadas) {
       setTemNaoAtrasadas(tarefasNaoAtrasadas.length > 0);
     }

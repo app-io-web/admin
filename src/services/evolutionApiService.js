@@ -35,14 +35,14 @@ export async function criarInstancia(nomeInstancia) {
         console.warn(`⚠️ Instância '${nomeInstancia}' já existe. Tratando automaticamente...`);
         const resultado = await verificarOuRecriarInstancia(nomeInstancia);
         if (resultado === 'CRIAR_NOVA') {
-          console.log('♻️ Tentando criar novamente após deleção...');
+          //console.log('♻️ Tentando criar novamente após deleção...');
           await new Promise(resolve => setTimeout(resolve, 1500)); // 👈 AQUI sim
           return await criarInstancia(nomeInstancia); // tenta criar de novo
 
 
         }
         if (resultado === 'JA_CONECTADA') {
-          console.log('✅ Instância já conectada, sem necessidade de criar.');
+          //console.log('✅ Instância já conectada, sem necessidade de criar.');
           return { state: 'CONNECTED' };
         }
         throw new Error('🛑 Erro inesperado ao tentar criar após verificação.');
@@ -106,7 +106,7 @@ export async function buscarInstanciaStatus(nomeInstancia) {
     const conectado = estado === 'connected' || estado === 'open';
   
     if (!conectado) {
-      console.log(`ℹ️ Instância ${nomeInstancia} já está desconectada ou inválida (estado: ${estado})`);
+      //console.log(`ℹ️ Instância ${nomeInstancia} já está desconectada ou inválida (estado: ${estado})`);
       return { status: 'ALREADY_DISCONNECTED' };
     }
   
@@ -176,7 +176,7 @@ export async function verificarOuRecriarInstancia(nomeInstancia) {
     );
   
     if (repetidas.length === 0) {
-      console.log('⚪ Nenhuma instância com esse nome. Pode criar nova.');
+      //console.log('⚪ Nenhuma instância com esse nome. Pode criar nova.');
       return 'CRIAR_NOVA';
     }
   
@@ -188,7 +188,7 @@ export async function verificarOuRecriarInstancia(nomeInstancia) {
       const state  = (inst?.instance?.state  || '').toLowerCase();
       const hasOwner = !!inst?.instance?.owner;
   
-      console.log(`🔍 Instância ${nome} encontrada com status:`, status, 'e state:', state);
+      //console.log(`🔍 Instância ${nome} encontrada com status:`, status, 'e state:', state);
   
       const estaConectada = state === 'connected' || (state === 'open' && hasOwner);
       if (estaConectada) {
@@ -206,7 +206,7 @@ export async function verificarOuRecriarInstancia(nomeInstancia) {
     }
   
     if (algumaConectada) {
-      console.log('✅ Pelo menos uma instância já conectada e válida.');
+     // console.log('✅ Pelo menos uma instância já conectada e válida.');
       return 'JA_CONECTADA';
     }
   

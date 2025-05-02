@@ -103,7 +103,7 @@ export default function ListaClientesBloqueados() {
             body: JSON.stringify({ numbers: lote }),
           };
 
-          console.log('📤 Enviando lote para API WhatsAppNumbers:', JSON.stringify({ numbers: lote }, null, 2));
+          //console.log('📤 Enviando lote para API WhatsAppNumbers:', JSON.stringify({ numbers: lote }, null, 2));
 
           const resp = await fetch('https://api.nexusnerds.com.br/chat/whatsappNumbers/ServicoAPI', options);
           if (!resp.ok) {
@@ -113,7 +113,7 @@ export default function ListaClientesBloqueados() {
           }
           const resultado = await resp.json();
 
-          console.log('🔍 Resposta da API WhatsAppNumbers para lote:', JSON.stringify(resultado, null, 2));
+          //console.log('🔍 Resposta da API WhatsAppNumbers para lote:', JSON.stringify(resultado, null, 2));
 
           if (Array.isArray(resultado)) {
             resultado.forEach(item => {
@@ -217,7 +217,7 @@ export default function ListaClientesBloqueados() {
       });
 
       const maxFibraData = await maxFibraResponse.json();
-      console.log('Resposta da API MAX FIBRA:', maxFibraData);
+      //console.log('Resposta da API MAX FIBRA:', maxFibraData);
 
       if (maxFibraData && maxFibraData.list && maxFibraData.list.length > 0) {
         maxFibraData.list.forEach(record => {
@@ -251,9 +251,9 @@ export default function ListaClientesBloqueados() {
                   });
 
                   if (status === 'Enviada') {
-                    console.log(`Cobrança para ${cliente} foi enviada com sucesso.`);
+                    //console.log(`Cobrança para ${cliente} foi enviada com sucesso.`);
                   } else {
-                    console.log(`Cobrança para ${cliente} falhou ou está pendente.`);
+                   // console.log(`Cobrança para ${cliente} falhou ou está pendente.`);
                   }
                 }
               });
@@ -261,7 +261,7 @@ export default function ListaClientesBloqueados() {
           }
         });
       } else {
-        console.log('Nenhum registro encontrado para a data de cobrança.');
+       // console.log('Nenhum registro encontrado para a data de cobrança.');
       }
     } catch (error) {
       console.error('Erro ao verificar status da cobrança na tabela MAX FIBRA:', error);

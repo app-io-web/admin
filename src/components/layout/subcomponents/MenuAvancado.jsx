@@ -38,8 +38,8 @@ export default function MenuAvancado({ isCollapsed, isActive, search }) {
     .filter(item => hasPermission(item.permission))
     .filter(item => item.label.toLowerCase().includes(search.toLowerCase().trim()));
 
-  console.log('Itens filtrados (items):', filteredItems);
-  console.log('Itens filtrados (configSiteItems):', filteredConfigSiteItems);
+  //console.log('Itens filtrados (items):', filteredItems);
+  //console.log('Itens filtrados (configSiteItems):', filteredConfigSiteItems);
 
   if (isLoading) {
     return (

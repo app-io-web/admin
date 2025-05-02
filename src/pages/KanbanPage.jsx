@@ -17,7 +17,7 @@ export default function KanbanPage() {
         top="20px"
         right="24px"
         zIndex={30}
-        display={{ base: 'none', sm: 'block' }}
+        display={{ base: 'none', md: 'block' }}
       >
         <PerfilUsuarioDesktop usuario={usuario} />
       </Box>
