@@ -24,36 +24,38 @@
 // src/components/charts/GraficoClientesAtivadosMes.jsx
 import { useEffect, useState } from 'react';
 import { Box, Spinner, Text } from '@chakra-ui/react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
-export default function GraficoClientesAtivadosMes() {
+export default function GraficoComparacaoClientes() {
   const [dados, setDados] = useState([]);
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
     const buscarDados = async () => {
       try {
-        const res = await fetch('https://apidoixc.nexusnerds.com.br/data/Clientes_ativados.json');
-        const json = await res.json();
+        // Fetch dos clientes ativados
+        const resAtivados = await fetch('https://apidoixc.nexusnerds.com.br/data/Clientes_ativados.json');
+        const jsonAtivados = await resAtivados.json();
 
-        const resumo = {
-          'Mês Passado': 0,
-          'Neste Mês': 0
-        };
+        // Fetch dos clientes bloqueados
+        const resBloqueados = await fetch('https://apidoixc.nexusnerds.com.br/Data/ClientesBloquados.json');
+        const jsonBloqueados = await resBloqueados.json();
 
-        json.forEach(item => {
-          if (item.status === 'Mês Passado') resumo['Mês Passado'] += 1;
-          if (item.status === 'Neste Mês') resumo['Neste Mês'] += 1;
-        });
+        // Contar o total de clientes ativados (sem distinguir por status)
+        const totalAtivados = jsonAtivados.length;
 
-        const resultado = Object.entries(resumo).map(([status, total]) => ({
-          status,
-          total
-        }));
+        // Contar o total de clientes bloqueados
+        const totalBloqueados = jsonBloqueados.length;
+
+        // Preparar os dados para o gráfico de donut
+        const resultado = [
+          { name: 'Ativados', value: totalAtivados },
+          { name: 'Bloqueados', value: totalBloqueados },
+        ];
 
         setDados(resultado);
       } catch (error) {
-        console.error('Erro ao buscar clientes ativados:', error);
+        console.error('Erro ao buscar dados:', error);
       } finally {
         setCarregando(false);
       }
@@ -62,20 +64,37 @@ export default function GraficoClientesAtivadosMes() {
     buscarDados();
   }, []);
 
+  // Definir cores para o gráfico de donut
+  const COLORS = ['#3182ce', '#ff6b6b']; // Azul para ativados, vermelho para bloqueados
+
   return (
     <Box w="100%" p={4} bg="whiteAlpha.100" borderRadius="md" boxShadow="md">
-      <Text fontSize="lg" fontWeight="bold" mb={4}>Clientes Ativados por Mês</Text>
+      <Text fontSize="lg" fontWeight="bold" mb={4}>Comparação: Clientes Ativados vs Bloqueados</Text>
       {carregando ? (
         <Spinner />
       ) : (
         <ResponsiveContainer width="100%" height={250}>
-          <BarChart data={dados}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="status" />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="total" fill="#3182ce" />
-          </BarChart>
+          <PieChart>
+            <Pie
+              data={dados}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              innerRadius={60} // Cria o "buraco" do donut
+              outerRadius={80}
+              fill="#8884d8"
+              paddingAngle={5}
+            >
+              {dados.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip
+              contentStyle={{ backgroundColor: '#333', borderRadius: '5px' }}
+              labelStyle={{ color: '#fff' }}
+            />
+          </PieChart>
         </ResponsiveContainer>
       )}
     </Box>

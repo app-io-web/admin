@@ -1,16 +1,32 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
-  Box, Textarea, Button, Heading, useToast, Spinner, Text
+  Box,
+  Textarea,
+  Button,
+  Heading,
+  useToast,
+  Spinner,
+  Text,
+  Checkbox,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
 } from '@chakra-ui/react';
+import { MdCloudUpload, MdDelete } from 'react-icons/md';
 import { apiGet, apiPatch } from '../../services/api';
-import { MdCloudUpload } from 'react-icons/md';  // Ícone para o botão de upload
 
 export default function MensagemCobrancaVirConfig() {
   const [mensagem, setMensagem] = useState('');
   const [idRegistro, setIdRegistro] = useState(null);
   const [carregando, setCarregando] = useState(true);
-  const [imagemURL, setImagemURL] = useState('');  // URL da imagem
+  const [imagemURL, setImagemURL] = useState('');
+  const [enviarMidia, setEnviarMidia] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const cancelRef = useRef();
   const toast = useToast();
 
   useEffect(() => {
@@ -20,7 +36,8 @@ export default function MensagemCobrancaVirConfig() {
         const dados = res?.list?.[0];
         if (dados) {
           setMensagem(dados?.VIR_TELECOM?.mensagem || '');
-          setImagemURL(dados?.VIR_TELECOM?.imagem || '');  // Carregar a imagem existente
+          setImagemURL(dados?.VIR_TELECOM?.imagem || '');
+          setEnviarMidia(dados?.VIR_TELECOM?.enviarMidia || false);
           setIdRegistro(dados?.Id);
         }
       } catch (err) {
@@ -62,13 +79,25 @@ export default function MensagemCobrancaVirConfig() {
       return;
     }
 
+    if (enviarMidia && !imagemURL) {
+      toast({
+        title: 'Imagem necessária',
+        description: 'Selecione uma imagem para enviar mídia ou desmarque a opção "Enviar mídia".',
+        status: 'warning',
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
     try {
       await apiPatch(`/api/v2/tables/mm2wytmovgp5cm6/records`, [
         {
           Id: idRegistro,
           VIR_TELECOM: {
             mensagem: mensagem,
-            imagem: imagemURL,  // Atualizando o campo de imagem
+            imagem: imagemURL,
+            enviarMidia: enviarMidia,
           },
         },
       ]);
@@ -94,9 +123,7 @@ export default function MensagemCobrancaVirConfig() {
   const uploadImagem = async (file) => {
     setUploading(true);
 
-    // Verificar se o nome do arquivo contém espaços
-    if (file.name.includes(" ")) {
-      // Verificar se o toast já foi exibido
+    if (file.name.includes(' ')) {
       if (!window.toastExibido) {
         toast({
           title: 'Erro no nome do arquivo',
@@ -105,20 +132,18 @@ export default function MensagemCobrancaVirConfig() {
           duration: 3000,
           isClosable: true,
         });
-        window.toastExibido = true;  // Garantir que o toast só apareça uma vez
+        window.toastExibido = true;
       }
       setUploading(false);
-      return; // Impede o envio do arquivo
+      return;
     }
 
-    // Corrigindo nome do arquivo (substituindo espaços por %20)
     const nomeArquivoCorrigido = encodeURIComponent(file.name);
-
     const formData = new FormData();
     formData.append('file', file);
     formData.append('size', file.size);
-    formData.append('title', nomeArquivoCorrigido);  // Usando o nome corrigido
-    formData.append('path', `2025/04/23/${Date.now()}_${nomeArquivoCorrigido}`); // Organizando a pasta
+    formData.append('title', nomeArquivoCorrigido);
+    formData.append('path', `2025/04/23/${Date.now()}_${nomeArquivoCorrigido}`);
 
     try {
       const res = await fetch('https://nocodb.nexusnerds.com.br/api/v2/storage/upload', {
@@ -132,17 +157,12 @@ export default function MensagemCobrancaVirConfig() {
       if (!res.ok) throw new Error('Falha no upload');
 
       const result = await res.json();
-      console.log("Resposta da API:", result); // Log para verificar o formato da resposta
-
-      // Usando o 'path' para construir a URL final
       const path = result?.[0]?.path;
 
       if (!path) throw new Error('URL não retornada corretamente');
 
-      // Construindo a URL final corrigida
       const url = `https://nocodb.nexusnerds.com.br/${path}`;
-
-      setImagemURL(url);  // Atualizando a URL da imagem
+      setImagemURL(url);
 
       toast({
         title: 'Imagem enviada!',
@@ -166,8 +186,53 @@ export default function MensagemCobrancaVirConfig() {
       });
     } finally {
       setUploading(false);
-      window.toastExibido = false; // Resetar a flag após a operação
+      window.toastExibido = false;
     }
+  };
+
+  const handleDeleteImagem = () => {
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteImagem = async () => {
+    setImagemURL('');
+    setEnviarMidia(false);
+    setIsDeleteDialogOpen(false);
+
+    try {
+      await apiPatch(`/api/v2/tables/mm2wytmovgp5cm6/records`, [
+        {
+          Id: idRegistro,
+          VIR_TELECOM: {
+            mensagem: mensagem,
+            imagem: '',
+            enviarMidia: false,
+          },
+        },
+      ]);
+
+      toast({
+        title: 'Imagem removida',
+        description: 'A imagem foi removida com sucesso.',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (err) {
+      toast({
+        title: 'Erro ao remover imagem',
+        description: 'Não foi possível salvar as alterações no servidor.',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+      setImagemURL(imagemURL);
+      setEnviarMidia(enviarMidia);
+    }
+  };
+
+  const cancelDeleteImagem = () => {
+    setIsDeleteDialogOpen(false);
   };
 
   return (
@@ -181,10 +246,16 @@ export default function MensagemCobrancaVirConfig() {
       ) : (
         <>
           <Box fontSize="sm" color="gray.500" mb={2}>
-            Variáveis disponíveis:&nbsp;
-            <Button size="xs" variant="ghost" onClick={() => setMensagem(m => m + ' {nome}')}>{"{nome}"}</Button>
-            <Button size="xs" variant="ghost" onClick={() => setMensagem(m => m + ' {CPF_CNPJ}')}>{"{CPF_CNPJ}"}</Button> {/* Alterado para CPF_CNPJ */}
-            <Button size="xs" variant="ghost" onClick={() => setMensagem(m => m + ' {telefone}')}>{"{telefone}"}</Button>
+            Variáveis disponíveis:
+            <Button size="xs" variant="ghost" onClick={() => setMensagem((m) => m + ' {nome}')}>
+              {'{nome}'}
+            </Button>
+            <Button size="xs" variant="ghost" onClick={() => setMensagem((m) => m + ' {CPF_CNPJ}')}>
+              {'{CPF_CNPJ}'}
+            </Button>
+            <Button size="xs" variant="ghost" onClick={() => setMensagem((m) => m + ' {telefone}')}>
+              {'{telefone}'}
+            </Button>
           </Box>
 
           <Box mb={4}>
@@ -213,10 +284,20 @@ export default function MensagemCobrancaVirConfig() {
             </Button>
           </Box>
 
-          {/* Adicionando a mensagem abaixo do botão de upload */}
           <Text color="gray.600" fontSize="sm" mt={2}>
             O nome da imagem não deve conter espaços. Por favor, altere o nome do arquivo e tente novamente.
           </Text>
+
+          <Box mb={4}>
+            <Checkbox
+              isChecked={enviarMidia}
+              onChange={(e) => setEnviarMidia(e.target.checked)}
+              colorScheme="blue"
+              isDisabled={!imagemURL}
+            >
+              Enviar mídia junto com a mensagem
+            </Checkbox>
+          </Box>
 
           <Textarea
             value={mensagem}
@@ -234,27 +315,63 @@ export default function MensagemCobrancaVirConfig() {
               <Text fontSize="sm" mb={2}>
                 Pré-visualização da imagem:
               </Text>
-              <img
-                src={imagemURL}
-                alt="Imagem de cobrança"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src =
-                    'https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg';
-                }}
-                style={{
-                  maxWidth: '100%',    // Tamanho máximo para que a imagem não ultrapasse a largura do contêiner
-                  maxHeight: '300px',  // Limita a altura máxima da imagem
-                  objectFit: 'contain', // Garante que a imagem seja ajustada sem distorcer
-                  borderRadius: 8
-                }}
-              />
+              <Box display="flex" alignItems="center" gap={4}>
+                <img
+                  src={imagemURL || null}
+                  alt="Imagem de cobrança"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src =
+                      'https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg';
+                  }}
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '300px',
+                    objectFit: 'contain',
+                    borderRadius: 8,
+                  }}
+                />
+                <Button
+                  leftIcon={<MdDelete />}
+                  colorScheme="red"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDeleteImagem}
+                >
+                  Remover Imagem
+                </Button>
+              </Box>
             </Box>
           )}
 
           <Button colorScheme="blue" onClick={salvarMensagem} mt={4}>
             Salvar Mensagem
           </Button>
+
+          <AlertDialog
+            isOpen={isDeleteDialogOpen}
+            leastDestructiveRef={cancelRef}
+            onClose={cancelDeleteImagem}
+          >
+            <AlertDialogOverlay>
+              <AlertDialogContent>
+                <AlertDialogHeader fontSize="lg" fontWeight="bold">
+                  Remover Imagem
+                </AlertDialogHeader>
+                <AlertDialogBody>
+                  Tem certeza que deseja remover a imagem? Esta ação atualizará as configurações no servidor.
+                </AlertDialogBody>
+                <AlertDialogFooter>
+                  <Button ref={cancelRef} onClick={cancelDeleteImagem}>
+                    Cancelar
+                  </Button>
+                  <Button colorScheme="red" onClick={confirmDeleteImagem} ml={3}>
+                    Remover
+                  </Button>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialogOverlay>
+          </AlertDialog>
         </>
       )}
     </Box>

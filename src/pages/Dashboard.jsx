@@ -1,9 +1,9 @@
 import { Box, Heading } from '@chakra-ui/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import SideBar from '../components/layout/SideBar';
 import BottomBar from '../components/layout/BottomBar';
 import PerfilUsuarioDesktop from '../components/layout/PerfilUsuarioDesktop';
-import { SimpleGrid, GridItem } from '@chakra-ui/react';
+import { SimpleGrid, GridItem, Grid } from '@chakra-ui/react';
 
 import EmpresaSwitcher from '../components/admin/EmpresaSwitcher';
 import TarefasAtrasadasCard from '../components/tarefas/TarefasAtrasadasCard';
@@ -26,6 +26,12 @@ import ClientesBloqueadosVirAccordion from '../components/ClientesBloqueadosVirA
 import GraficoComparativoClientesVir from '../components/charts/GraficoComparativoClientesVir';
 import GraficoCanceladosVirTimeline from '../components/charts/GraficoCanceladosVirTimeline';
 
+// MONITORAMENTO
+import PingStatus from '../components/monitoramento/PingStatus';
+
+// ✅ CHAT FLUTUANTE
+import ChatFlutuante from '../components/chatFlutuante/ChatFlutuante';
+
 export default function Dashboard() {
   const usuario = JSON.parse(localStorage.getItem('usuario')) || {};
   const [empresaSelecionada, setEmpresaSelecionada] = useState(() => {
@@ -34,6 +40,16 @@ export default function Dashboard() {
 
   const [temAtrasadas, setTemAtrasadas] = useState(false);
   const [temNaoAtrasadas, setTemNaoAtrasadas] = useState(false);
+
+  // Log para verificar quando o Dashboard é montado
+  useEffect(() => {
+    console.log('Dashboard montado. Empresa selecionada:', empresaSelecionada);
+  }, []);
+
+  // Log para verificar mudanças na empresa selecionada
+  useEffect(() => {
+    console.log('Empresa selecionada alterada para:', empresaSelecionada);
+  }, [empresaSelecionada]);
 
   return (
     <Box display="flex" minH="100vh" position="relative">
@@ -80,9 +96,13 @@ export default function Dashboard() {
             </GridItem>
           </SimpleGrid>
         ) : (
-          <>
-            {/* Linha 1 - Gráficos pequenos */}
-            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={6}>
+          <Grid templateColumns={{ base: '1fr', xl: '3fr 1fr' }} gap={6}>
+            <Box order={{ base: 0, xl: 1 }} mb={{ base: 6, xl: 0 }}>
+              <PingStatus />
+            </Box>
+
+            <Box order={{ base: 1, xl: 0 }}>
+              <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={6}>
                 <Box w="100%">
                   <GraficoClientesAtivadosMes />
                 </Box>
@@ -94,28 +114,29 @@ export default function Dashboard() {
                 </Box>
               </SimpleGrid>
 
-              {/* Linha 2 - Gráficos grandes (2 por linha, se couber) */}
               <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6} mb={6}>
-                  <Box w="100%">
-                    <GraficodeQuantidadeOrdensAgendadas />
-                  </Box>
-                  <Box w="100%">
-                    <GraficoClientesAtivadosComparativo />
-                  </Box>
-                </SimpleGrid>
-
+                <Box w="100%">
+                  <GraficodeQuantidadeOrdensAgendadas />
+                </Box>
+                <Box w="100%">
+                  <GraficoClientesAtivadosComparativo />
+                </Box>
+              </SimpleGrid>
 
               <Box>
                 <StatusOnusCard />
                 <TarefasAtrasadasCard setTemAtrasadas={setTemAtrasadas} />
                 <TarefasNaoAtrasadasCard setTemNaoAtrasadas={setTemNaoAtrasadas} />
               </Box>
-
-          </>
+            </Box>
+          </Grid>
         )}
       </Box>
 
       <BottomBar />
+
+      {/* ✅ Chat flutuante no canto inferior direito */}
+      <ChatFlutuante />
     </Box>
   );
 }

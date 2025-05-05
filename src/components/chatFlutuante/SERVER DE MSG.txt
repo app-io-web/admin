@@ -1,0 +1,689 @@
+import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import fs from 'fs';
+import path from 'path';
+import cors from 'cors';
+
+const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
+  maxHttpBufferSize: 10e6 // 10MB
+});
+
+const usuariosOnline = {};
+const PORT = 4007;
+const INATIVIDADE_TIMEOUT = 60000; // Aumentado para 60 segundos
+
+const digitandoTimeouts = new Map();
+
+const tiposPermitidos = [
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'video/mp4',
+  'video/webm',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+];
+
+app.use(cors());
+app.use(express.json());
+
+app.use('/anexos', (req, res, next) => {
+  const filePath = path.join('anexos', req.path);
+  if (!fs.existsSync(filePath)) {
+    console.error(`❌ Arquivo não encontrado: ${filePath}`);
+    return res.status(404).send('Arquivo não encontrado');
+  }
+  next();
+}, express.static(path.join('anexos')));
+
+app.get('/', (req, res) => {
+  res.send('🟢 Server de Chat rodando...');
+});
+
+function salvarGrupo(grupo) {
+  const caminhoPasta = path.join('groups');
+  const caminhoArquivo = path.join(caminhoPasta, 'groups.json');
+
+  console.log(`📢 Salvando grupo: ${grupo.id} - ${grupo.name}`);
+  if (!fs.existsSync(caminhoPasta)) {
+    try {
+      fs.mkdirSync(caminhoPasta, { recursive: true });
+    } catch (error) {
+      console.error(`❌ Erro ao criar pasta ${caminhoPasta}:`, error);
+      return;
+    }
+  }
+
+  let grupos = [];
+  if (fs.existsSync(caminhoArquivo)) {
+    try {
+      const conteudo = fs.readFileSync(caminhoArquivo, 'utf8');
+      grupos = JSON.parse(conteudo);
+    } catch (error) {
+      console.error(`❌ Erro ao ler arquivo ${caminhoArquivo}:`, error);
+    }
+  }
+
+  // Evitar duplicatas
+  if (!grupos.some(g => g.id === grupo.id)) {
+    grupos.push(grupo);
+  }
+
+  try {
+    fs.writeFileSync(caminhoArquivo, JSON.stringify(grupos, null, 2), 'utf8');
+    console.log(`✅ Grupo salvo com sucesso: ${grupo.id} - ${grupo.name}`);
+  } catch (error) {
+    console.error(`❌ Erro ao salvar grupo em ${caminhoArquivo}:`, error);
+  }
+}
+
+function carregarGrupos() {
+  const caminhoArquivo = path.join('groups', 'groups.json');
+  if (!fs.existsSync(caminhoArquivo)) {
+    console.log(`ℹ️ Arquivo de grupos não encontrado: ${caminhoArquivo}. Retornando lista vazia.`);
+    return [];
+  }
+
+  try {
+    const conteudo = fs.readFileSync(caminhoArquivo, 'utf8');
+    const grupos = JSON.parse(conteudo);
+    console.log(`✅ Grupos carregados com sucesso: ${grupos.length} grupos encontrados.`);
+    return grupos;
+  } catch (error) {
+    console.error(`❌ Erro ao carregar grupos de ${caminhoArquivo}:`, error);
+    return [];
+  }
+}
+
+function salvarMensagemArquivo(de, para, mensagemTexto, timestamp, replyTo, isGroup = false) {
+  const caminhoPasta = path.join(isGroup ? 'group_chats' : 'chats');
+  let nomeArquivo;
+
+  if (isGroup) {
+    nomeArquivo = `group_chat_${para}.json`;
+  } else {
+    const idsOrdenados = [de, para].sort();
+    nomeArquivo = `chat_${idsOrdenados[0]}_${idsOrdenados[1]}.json`;
+  }
+
+  const caminhoArquivo = path.join(caminhoPasta, nomeArquivo);
+  console.log(`💾 Salvando mensagem em ${caminhoArquivo}`);
+
+  if (!fs.existsSync(caminhoPasta)) {
+    try {
+      fs.mkdirSync(caminhoPasta, { recursive: true });
+    } catch (error) {
+      console.error(`❌ Erro ao criar pasta ${caminhoPasta}:`, error);
+      return;
+    }
+  }
+
+  let mensagens = [];
+  if (fs.existsSync(caminhoArquivo)) {
+    try {
+      const conteudo = fs.readFileSync(caminhoArquivo, 'utf8');
+      mensagens = JSON.parse(conteudo);
+    } catch (error) {
+      console.error(`❌ Erro ao ler arquivo ${caminhoArquivo}:`, error);
+    }
+  }
+
+  mensagens.push({
+    autor: de,
+    destino: para,
+    texto: mensagemTexto,
+    timestamp: timestamp || new Date().toISOString(),
+    replyTo: replyTo || null,
+    isGroup,
+  });
+
+  try {
+    fs.writeFileSync(caminhoArquivo, JSON.stringify(mensagens, null, 2), 'utf8');
+    console.log(`✅ Mensagem salva com sucesso em ${caminhoArquivo}`);
+  } catch (error) {
+    console.error(`❌ Erro ao salvar mensagem em ${caminhoArquivo}:`, error);
+  }
+}
+
+function deletarMensagemArquivo(de, para, messageId, isGroup = false) {
+  const caminhoPasta = path.join(isGroup ? 'group_chats' : 'chats');
+  let nomeArquivo;
+
+  if (isGroup) {
+    nomeArquivo = `group_chat_${para}.json`;
+  } else {
+    const idsOrdenados = [de, para].sort();
+    nomeArquivo = `chat_${idsOrdenados[0]}_${idsOrdenados[1]}.json`;
+  }
+
+  const caminhoArquivo = path.join(caminhoPasta, nomeArquivo);
+
+  if (!fs.existsSync(caminhoArquivo)) {
+    console.error(`❌ Arquivo de chat não encontrado: ${caminhoArquivo}`);
+    return false;
+  }
+
+  let mensagens = [];
+  try {
+    const conteudo = fs.readFileSync(caminhoArquivo, 'utf8');
+    mensagens = JSON.parse(conteudo);
+  } catch (error) {
+    console.error(`❌ Erro ao ler arquivo ${caminhoArquivo}:`, error);
+    return false;
+  }
+
+  const updatedMensagens = mensagens.filter((msg, index) => `${msg.timestamp}-${index}` !== messageId);
+
+  if (updatedMensagens.length === mensagens.length) {
+    console.error(`❌ Mensagem com ID ${messageId} não encontrada em ${caminhoArquivo}`);
+    return false;
+  }
+
+  try {
+    fs.writeFileSync(caminhoArquivo, JSON.stringify(updatedMensagens, null, 2), 'utf8');
+    console.log(`🗑️ Mensagem ${messageId} deletada com sucesso de ${caminhoArquivo}`);
+    return true;
+  } catch (error) {
+    console.error(`❌ Erro ao salvar arquivo após deleção em ${caminhoArquivo}:`, error);
+    return false;
+  }
+}
+
+function salvarAnexo(de, para, nomeArquivo, tipo, dadosBase64, replyTo, isGroup = false) {
+  let caminhoPasta;
+  if (isGroup) {
+    caminhoPasta = path.join('anexos', `group_${para}`);
+  } else {
+    const idsOrdenados = [de, para].sort();
+    caminhoPasta = path.join('anexos', `${idsOrdenados[0]}_${idsOrdenados[1]}`);
+  }
+
+  if (!fs.existsSync(caminhoPasta)) {
+    try {
+      fs.mkdirSync(caminhoPasta, { recursive: true });
+    } catch (error) {
+      console.error(`❌ Erro ao criar pasta ${caminhoPasta}:`, error);
+      return null;
+    }
+  }
+
+  const caminhoArquivo = path.join(caminhoPasta, nomeArquivo);
+
+  const base64Regex = /^data:[\w\/]+;base64,/;
+  if (!base64Regex.test(dadosBase64)) {
+    console.error('❌ Dados Base64 inválidos:', dadosBase64.slice(0, 50) + '...');
+    return null;
+  }
+
+  const dados = dadosBase64.replace(base64Regex, '');
+  try {
+    fs.writeFileSync(caminhoArquivo, dados, 'base64');
+    return `/anexos/${isGroup ? `group_${para}` : `${[de, para].sort().join('_')}`}/${nomeArquivo}`;
+  } catch (error) {
+    console.error(`❌ Erro ao salvar anexo ${caminhoArquivo}:`, error);
+    return null;
+  }
+}
+
+let usuariosOnlineAnterior = JSON.stringify(Object.keys(usuariosOnline));
+setInterval(() => {
+  const agora = Date.now();
+  let mudou = false;
+  for (const [unicID, info] of Object.entries(usuariosOnline)) {
+    if (agora - info.lastHeartbeat > INATIVIDADE_TIMEOUT) {
+      console.log(`🔌 Usuário ${unicID} removido por inatividade`);
+      delete usuariosOnline[unicID];
+      mudou = true;
+    }
+  }
+  const usuariosAtuais = JSON.stringify(Object.keys(usuariosOnline));
+  if (mudou || usuariosOnlineAnterior !== usuariosAtuais) {
+    io.emit('usuarios_online', Object.keys(usuariosOnline));
+    usuariosOnlineAnterior = usuariosAtuais;
+  }
+}, 10000);
+
+app.get('/groups/:userId', (req, res) => {
+  const { userId } = req.params;
+  const grupos = carregarGrupos();
+  const gruposDoUsuario = grupos.filter((grupo) => grupo.members.includes(userId));
+  console.log(`🔍 Buscando grupos para o usuário ${userId}: ${gruposDoUsuario.length} grupos encontrados.`);
+  res.json(gruposDoUsuario);
+});
+
+app.get('/group/:groupId', (req, res) => {
+  const { groupId } = req.params;
+  const { offset = 0 } = req.query;
+  const limit = 20;
+
+  const nomeArquivo = `group_chat_${groupId}.json`;
+  const caminhoArquivo = path.join('group_chats', nomeArquivo);
+
+  console.log(`📜 Buscando histórico do grupo ${groupId}`);
+  if (!fs.existsSync(caminhoArquivo)) {
+    console.log(`ℹ️ Histórico do grupo ${groupId} não encontrado.`);
+    return res.json([]);
+  }
+
+  try {
+    const conteudo = fs.readFileSync(caminhoArquivo, 'utf8');
+    const mensagens = JSON.parse(conteudo);
+    console.log(`✅ ${mensagens.length} mensagens encontradas para o grupo ${groupId}`);
+
+    const startIndex = Math.max(0, mensagens.length - limit - parseInt(offset));
+    const endIndex = mensagens.length - parseInt(offset);
+    const mensagensPaginadas = mensagens.slice(startIndex, endIndex);
+
+    return res.json(mensagensPaginadas);
+  } catch (error) {
+    console.error(`❌ Erro ao ler histórico do grupo ${caminhoArquivo}:`, error);
+    return res.status(500).json([]);
+  }
+});
+
+io.on('connection', (socket) => {
+  socket.on('registrar', (unicID) => {
+    console.log(`📍 Usuário ${unicID} registrado`);
+    usuariosOnline[unicID] = {
+      socketId: socket.id,
+      lastHeartbeat: Date.now(),
+    };
+    io.emit('usuarios_online', Object.keys(usuariosOnline));
+  });
+
+  socket.on('heartbeat', (unicID) => {
+    console.log(`💓 Heartbeat recebido de ${unicID}`);
+    if (usuariosOnline[unicID]) {
+      usuariosOnline[unicID].lastHeartbeat = Date.now();
+    } else {
+      usuariosOnline[unicID] = {
+        socketId: socket.id,
+        lastHeartbeat: Date.now(),
+      };
+    }
+    const usuariosAtuais = JSON.stringify(Object.keys(usuariosOnline));
+    if (usuariosOnlineAnterior !== usuariosAtuais) {
+      io.emit('usuarios_online', Object.keys(usuariosOnline));
+      usuariosOnlineAnterior = usuariosAtuais;
+    }
+  });
+
+  socket.on('criar_grupo', ({ groupId, groupName, members, creator }) => {
+    console.log(`📢 Criando grupo: ${groupId}, nome: ${groupName}, membros: ${members}`);
+    const grupo = {
+      id: groupId,
+      name: groupName,
+      members,
+      creator,
+      createdAt: new Date().toISOString(),
+    };
+
+    salvarGrupo(grupo);
+
+    members.forEach((memberId) => {
+      const socketDestino = usuariosOnline[memberId]?.socketId;
+      if (socketDestino) {
+        console.log(`📤 Notificando ${memberId} sobre grupo criado`);
+        io.to(socketDestino).emit('grupo_criado', { groupId, groupName, members });
+      } else {
+        console.log(`ℹ️ Membro ${memberId} não está online`);
+      }
+    });
+
+    const mensagemSistema = JSON.stringify({
+      tipo: 'sistema',
+      texto: `Grupo "${groupName}" criado!`,
+    });
+    const timestampSistema = new Date().toISOString();
+    salvarMensagemArquivo(creator, groupId, mensagemSistema, timestampSistema, null, true);
+  });
+
+  socket.on('mensagem_privada', ({ para, mensagem, de, timestamp, replyTo, isGroup }) => {
+    console.log(`📥 Recebida mensagem_privada: para=${para}, de=${de}, isGroup=${isGroup}`);
+    const mensagemTimestamp = timestamp || new Date().toISOString();
+  
+    if (isGroup) {
+      const grupos = carregarGrupos();
+      const grupo = grupos.find((g) => g.id === para);
+      if (!grupo) {
+        console.error(`❌ Grupo ${para} não encontrado`);
+        return;
+      }
+      grupo.members.forEach((memberId) => {
+        if (memberId !== de) {
+          const socketDestino = usuariosOnline[memberId]?.socketId;
+          if (socketDestino) {
+            io.to(socketDestino).emit('mensagem_privada', {
+              mensagem,
+              de,
+              para,
+              timestamp: mensagemTimestamp,
+              replyTo,
+              isGroup: true,
+              unread: true, // Adiciona flag para mensagens não lidas
+            });
+          }
+        }
+      });
+    } else {
+      const socketDestino = usuariosOnline[para]?.socketId;
+      if (socketDestino) {
+        io.to(socketDestino).emit('mensagem_privada', {
+          mensagem,
+          de,
+          para,
+          timestamp: mensagemTimestamp,
+          replyTo,
+          isGroup: false,
+          unread: true, // Adiciona flag para mensagens não lidas
+        });
+      }
+    }
+  
+    salvarMensagemArquivo(de, para, mensagem, mensagemTimestamp, replyTo, isGroup);
+  });
+
+  socket.on('enviar_anexo', ({ para, de, nomeArquivo, tipo, dadosBase64, timestamp, replyTo, isGroup }) => {
+    console.log(`📎 Recebido anexo: para=${para}, de=${de}, nome=${nomeArquivo}, isGroup=${isGroup}`);
+    if (!tiposPermitidos.includes(tipo)) {
+      console.error(`❌ Tipo de arquivo não permitido: ${tipo}`);
+      return;
+    }
+
+    const mensagemTimestamp = timestamp || new Date().toISOString();
+    const caminhoAnexo = salvarAnexo(de, para, nomeArquivo, tipo, dadosBase64, replyTo, isGroup);
+
+    if (!caminhoAnexo) {
+      console.error('❌ Falha ao salvar anexo');
+      return;
+    }
+
+    const mensagemAnexo = {
+      tipo: 'anexo',
+      url: caminhoAnexo,
+      nomeArquivo,
+      mimeType: tipo,
+    };
+
+    if (isGroup) {
+      const grupos = carregarGrupos();
+      const grupo = grupos.find((g) => g.id === para);
+      if (!grupo) {
+        console.error(`❌ Grupo ${para} não encontrado`);
+        return;
+      }
+
+      grupo.members.forEach((memberId) => {
+        if (memberId !== de) {
+          const socketDestino = usuariosOnline[memberId]?.socketId;
+          if (socketDestino) {
+            console.log(`📤 Enviando anexo para ${memberId} (socket: ${socketDestino})`);
+            io.to(socketDestino).emit('mensagem_privada', {
+              mensagem: JSON.stringify(mensagemAnexo),
+              de,
+              para,
+              timestamp: mensagemTimestamp,
+              replyTo,
+              isGroup: true,
+            });
+          } else {
+            console.log(`ℹ️ Membro ${memberId} não está online`);
+          }
+        }
+      });
+    } else {
+      const socketDestino = usuariosOnline[para]?.socketId;
+      if (socketDestino) {
+        console.log(`📤 Enviando anexo para ${para} (socket: ${socketDestino})`);
+        io.to(socketDestino).emit('mensagem_privada', {
+          mensagem: JSON.stringify(mensagemAnexo),
+          de,
+          para,
+          timestamp: mensagemTimestamp,
+          replyTo,
+          isGroup: false,
+        });
+      } else {
+        console.log(`ℹ️ Usuário ${para} não está online`);
+      }
+    }
+
+    const socketOrigem = usuariosOnline[de]?.socketId;
+    if (socketOrigem) {
+      console.log(`📤 Enviando confirmação de anexo para remetente ${de} (socket: ${socketOrigem})`);
+      io.to(socketOrigem).emit('mensagem_privada', {
+        mensagem: JSON.stringify(mensagemAnexo),
+        de,
+        para,
+        timestamp: mensagemTimestamp,
+        replyTo,
+        isGroup: !!isGroup,
+      });
+    }
+
+    salvarMensagemArquivo(de, para, JSON.stringify(mensagemAnexo), mensagemTimestamp, replyTo, isGroup);
+  });
+
+  socket.on('digitando', ({ de, para, isGroup }) => {
+    console.log(`✍️ Recebido digitando: de=${de}, para=${para}, isGroup=${isGroup}`);
+    const chave = `${de}_${para}`;
+    if (digitandoTimeouts.has(chave)) {
+      return;
+    }
+
+    if (isGroup) {
+      const grupos = carregarGrupos();
+      const grupo = grupos.find((g) => g.id === para);
+      if (!grupo) {
+        console.error(`❌ Grupo ${para} não encontrado`);
+        return;
+      }
+
+      grupo.members.forEach((memberId) => {
+        if (memberId !== de) {
+          const socketDestino = usuariosOnline[memberId]?.socketId;
+          if (socketDestino) {
+            console.log(`📤 Notificando ${memberId} que ${de} está digitando`);
+            io.to(socketDestino).emit('digitando', { de, para, isGroup: true });
+            digitandoTimeouts.set(chave, setTimeout(() => {
+              digitandoTimeouts.delete(chave);
+            }, 500));
+          }
+        }
+      });
+    } else {
+      const socketDestino = usuariosOnline[para]?.socketId;
+      if (socketDestino) {
+        console.log(`📤 Notificando ${para} que ${de} está digitando`);
+        io.to(socketDestino).emit('digitando', { de, para, isGroup: false });
+        digitandoTimeouts.set(chave, setTimeout(() => {
+          digitandoTimeouts.delete(chave);
+        }, 500));
+      }
+    }
+  });
+
+  socket.on('parar_digitar', ({ de, para, isGroup }) => {
+    console.log(`🛑 Recebido parar_digitar: de=${de}, para=${para}, isGroup=${isGroup}`);
+    const chave = `${de}_${para}`;
+    if (digitandoTimeouts.has(chave)) {
+      clearTimeout(digitandoTimeouts.get(chave));
+      digitandoTimeouts.delete(chave);
+    }
+
+    if (isGroup) {
+      const grupos = carregarGrupos();
+      const grupo = grupos.find((g) => g.id === para);
+      if (!grupo) {
+        console.error(`❌ Grupo ${para} não encontrado`);
+        return;
+      }
+
+      grupo.members.forEach((memberId) => {
+        if (memberId !== de) {
+          const socketDestino = usuariosOnline[memberId]?.socketId;
+          if (socketDestino) {
+            console.log(`📤 Notificando ${memberId} que ${de} parou de digitar`);
+            io.to(socketDestino).emit('parar_digitar', { de, para, isGroup: true });
+          }
+        }
+      });
+    } else {
+      const socketDestino = usuariosOnline[para]?.socketId;
+      if (socketDestino) {
+        console.log(`📤 Notificando ${para} que ${de} parou de digitar`);
+        io.to(socketDestino).emit('parar_digitar', { de, para, isGroup: false });
+      }
+    }
+  });
+
+  socket.on('visualizar_conversa', ({ de, para, isGroup }) => {
+    console.log(`👀 Recebido visualizar_conversa: de=${de}, para=${para}, isGroup=${isGroup}`);
+    if (isGroup) {
+      const grupos = carregarGrupos();
+      const grupo = grupos.find((g) => g.id === para);
+      if (!grupo) {
+        console.error(`❌ Grupo ${para} não encontrado`);
+        return;
+      }
+
+      grupo.members.forEach((memberId) => {
+        if (memberId !== de) {
+          const socketDestino = usuariosOnline[memberId]?.socketId;
+          if (socketDestino) {
+            console.log(`📤 Notificando ${memberId} que ${de} visualizou a conversa`);
+            io.to(socketDestino).emit('conversa_visualizada', { de, para });
+          }
+        }
+      });
+    } else {
+      const socketDestino = usuariosOnline[para]?.socketId;
+      if (socketDestino) {
+        console.log(`📤 Notificando ${para} que ${de} visualizou a conversa`);
+        io.to(socketDestino).emit('conversa_visualizada', { de, para });
+      }
+    }
+  });
+
+  socket.on('deletar_mensagem', ({ messageId, de, para, usuarioNome, isGroup }) => {
+    const nomeValido = (typeof usuarioNome === 'string' && usuarioNome.trim() !== '') ? usuarioNome : 'Usuário Desconhecido';
+    console.log(`🗑️ Recebido evento deletar_mensagem: messageId=${messageId}, de=${de}, para=${para}, usuarioNome=${nomeValido}, isGroup=${isGroup}`);
+
+    const sucesso = deletarMensagemArquivo(de, para, messageId, isGroup);
+    if (sucesso) {
+      const mensagemSistema = JSON.stringify({
+        tipo: 'sistema',
+        texto: `${nomeValido} deletou a mensagem`,
+      });
+      const timestampSistema = new Date().toISOString();
+      salvarMensagemArquivo(de, para, mensagemSistema, timestampSistema, null, isGroup);
+
+      if (isGroup) {
+        const grupos = carregarGrupos();
+        const grupo = grupos.find((g) => g.id === para);
+        if (!grupo) {
+          console.error(`❌ Grupo ${para} não encontrado`);
+          return;
+        }
+
+        grupo.members.forEach((memberId) => {
+          if (memberId !== de) {
+            const socketDestino = usuariosOnline[memberId]?.socketId;
+            if (socketDestino) {
+              console.log(`📤 Notificando ${memberId} sobre mensagem deletada`);
+              io.to(socketDestino).emit('mensagem_privada', {
+                mensagem: mensagemSistema,
+                de,
+                para,
+                timestamp: timestampSistema,
+                replyTo: null,
+                isGroup: true,
+              });
+              io.to(socketDestino).emit('mensagem_deletada', { messageId, de, para, usuarioNome: nomeValido, isGroup: true });
+            }
+          }
+        });
+      } else {
+        const socketDestino = usuariosOnline[para]?.socketId;
+        if (socketDestino) {
+          console.log(`📤 Notificando ${para} sobre mensagem deletada`);
+          io.to(socketDestino).emit('mensagem_privada', {
+            mensagem: mensagemSistema,
+            de,
+            para,
+            timestamp: timestampSistema,
+            replyTo: null,
+            isGroup: false,
+          });
+          io.to(socketDestino).emit('mensagem_deletada', { messageId, de, para, usuarioNome: nomeValido, isGroup: false });
+        }
+      }
+
+      const socketOrigem = usuariosOnline[de]?.socketId;
+      if (socketOrigem) {
+        console.log(`📤 Notificando remetente ${de} sobre mensagem deletada`);
+        io.to(socketOrigem).emit('mensagem_privada', {
+          mensagem: mensagemSistema,
+          de,
+          para,
+          timestamp: timestampSistema,
+          replyTo: null,
+          isGroup: !!isGroup,
+        });
+        io.to(socketOrigem).emit('mensagem_deletada', { messageId, de, para, usuarioNome: nomeValido, isGroup: !!isGroup });
+      }
+    }
+  });
+
+  socket.on('disconnect', () => {
+    for (const [unicID, info] of Object.entries(usuariosOnline)) {
+      if (info.socketId === socket.id) {
+        console.log(`🔌 Usuário ${unicID} desconectado, aguardando timeout de inatividade`);
+        break;
+      }
+    }
+  });
+});
+
+app.get('/chat/:user1/:user2', (req, res) => {
+  const { user1, user2 } = req.params;
+  const { offset = 0 } = req.query;
+  const limit = 20;
+
+  const idsOrdenados = [user1, user2].sort();
+  const nomeArquivo = `chat_${idsOrdenados[0]}_${idsOrdenados[1]}.json`;
+  const caminhoArquivo = path.join('chats', nomeArquivo);
+
+  console.log(`📜 Buscando histórico de chat: ${caminhoArquivo}`);
+  if (!fs.existsSync(caminhoArquivo)) {
+    console.log(`ℹ️ Histórico de chat não encontrado: ${caminhoArquivo}`);
+    return res.json([]);
+  }
+
+  try {
+    const conteudo = fs.readFileSync(caminhoArquivo, 'utf8');
+    const mensagens = JSON.parse(conteudo);
+    console.log(`✅ ${mensagens.length} mensagens encontradas para o chat ${user1}_${user2}`);
+
+    const startIndex = Math.max(0, mensagens.length - limit - parseInt(offset));
+    const endIndex = mensagens.length - parseInt(offset);
+    const mensagensPaginadas = mensagens.slice(startIndex, endIndex);
+
+    return res.json(mensagensPaginadas);
+  } catch (error) {
+    console.error(`❌ Erro ao ler histórico ${caminhoArquivo}:`, error);
+    return res.status(500).json([]);
+  }
+});
+
+httpServer.listen(PORT, () => {
+  console.log(`🚀 Server de chat rodando na porta ${PORT}`);
+});

@@ -1,6 +1,11 @@
 import { Box } from '@chakra-ui/react';
 import { Routes, Route } from 'react-router-dom';
 
+
+import { useEffect } from 'react';
+import { registrarNotificacaoPush } from './utils/pushNotifications';
+
+
 // Páginas do painel
 import Dashboard from './pages/Dashboard';
 import AtalhosAdmin from './components/admin/AtalhosAdmin';
@@ -48,6 +53,27 @@ import ChatPage from './pages/chat/ChatPage';
 
 
 function App() {
+
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data?.type === 'ABRIR_CHAT') {
+          console.log('🔔 Notificação clicada: abrir chat');
+          // lógica para abrir chat
+        }
+      });
+  
+      const usuario = JSON.parse(localStorage.getItem('usuario'));
+      if (usuario?.UnicID_User) {
+        registrarNotificacaoPush(usuario.UnicID_User); // ✅ função correta
+      }
+    }
+  }, []);
+  
+  
+  
+
+
   return (
     <Box p={0}>
       <Routes>

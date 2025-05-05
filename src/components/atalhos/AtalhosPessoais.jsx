@@ -39,11 +39,18 @@ export default function AtalhosPessoais() {
   const unicID_user = usuario.idUnico;
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { isOpen: isInfoOpen, onOpen: onInfoOpen, onClose: onInfoClose } = useDisclosure();
+  const { isOpen: isInfoOpen, onOpen: onInfoOpen, onClose: onInfoCloseOriginal } = useDisclosure();
 
   const bgCard = useColorModeValue('white', 'gray.800');
   const textColor = useColorModeValue('gray.800', 'white');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
+
+  // Função ajustada para fechar o modal de informações
+  const onInfoClose = () => {
+    setAtalhoSelecionado(null); // Reseta o atalho selecionado
+    setShowPassword(false); // Reseta a visibilidade da senha
+    onInfoCloseOriginal(); // Chama a função original de fechar o modal
+  };
 
   const fetchAtalhos = async () => {
     setCarregando(true);
@@ -143,20 +150,6 @@ export default function AtalhosPessoais() {
     onOpen();
   };
 
-  const handleOpenInfoModal = (atalho) => {
-    setAtalhoSelecionado(atalho);
-    setShowPassword(false);
-
-    const hasEmail = atalho?.email && atalho.email.trim() !== '';
-    const hasSenha = atalho?.senha && atalho.senha.trim() !== '';
-
-    if (hasEmail && hasSenha) {
-      onInfoOpen();
-    } else {
-      handleRedirect();
-    }
-  };
-
   const isValidUrl = (url) => {
     if (!url) return false;
     try {
@@ -167,10 +160,32 @@ export default function AtalhosPessoais() {
     }
   };
 
-  const handleRedirect = () => {
-    if (atalhoSelecionado?.url && isValidUrl(atalhoSelecionado.url)) {
-      window.open(atalhoSelecionado.url, '_blank', 'noopener,noreferrer');
-      onInfoClose();
+  const handleRedirect = (atalho) => {
+    if (atalho?.url && isValidUrl(atalho.url)) {
+      window.open(atalho.url, '_blank', 'noopener,noreferrer');
+    } else {
+      toast({
+        title: 'Erro',
+        description: 'URL inválida ou não fornecida.',
+        status: 'error',
+        duration: 4000,
+        isClosable: true,
+      });
+    }
+    onInfoClose(); // Fecha o modal (se aberto) e reseta o estado
+  };
+
+  const handleOpenInfoModal = (atalho) => {
+    setAtalhoSelecionado(atalho);
+    setShowPassword(false);
+
+    const hasEmail = atalho?.email && atalho.email.trim() !== '';
+    const hasSenha = atalho?.senha && atalho.senha.trim() !== '';
+
+    if (hasEmail && hasSenha) {
+      onInfoOpen();
+    } else {
+      handleRedirect(atalho); // Passa o atalho diretamente para evitar dependência de estado
     }
   };
 
@@ -414,7 +429,7 @@ export default function AtalhosPessoais() {
             <Button
               colorScheme="blue"
               mr={3}
-              onClick={handleRedirect}
+              onClick={() => handleRedirect(atalhoSelecionado)}
               isDisabled={!isValidUrl(atalhoSelecionado?.url)}
             >
               Ir para o site
