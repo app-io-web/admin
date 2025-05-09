@@ -1,9 +1,8 @@
-import { Box, Heading } from '@chakra-ui/react';
+import { Box, Heading, SimpleGrid, GridItem, Flex } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import SideBar from '../components/layout/SideBar';
 import BottomBar from '../components/layout/BottomBar';
 import PerfilUsuarioDesktop from '../components/layout/PerfilUsuarioDesktop';
-import { SimpleGrid, GridItem, Grid } from '@chakra-ui/react';
 
 import EmpresaSwitcher from '../components/admin/EmpresaSwitcher';
 import TarefasAtrasadasCard from '../components/tarefas/TarefasAtrasadasCard';
@@ -41,12 +40,10 @@ export default function Dashboard() {
   const [temAtrasadas, setTemAtrasadas] = useState(false);
   const [temNaoAtrasadas, setTemNaoAtrasadas] = useState(false);
 
-  // Log para verificar quando o Dashboard é montado
   useEffect(() => {
     console.log('Dashboard montado. Empresa selecionada:', empresaSelecionada);
   }, []);
 
-  // Log para verificar mudanças na empresa selecionada
   useEffect(() => {
     console.log('Empresa selecionada alterada para:', empresaSelecionada);
   }, [empresaSelecionada]);
@@ -96,12 +93,12 @@ export default function Dashboard() {
             </GridItem>
           </SimpleGrid>
         ) : (
-          <Grid templateColumns={{ base: '1fr', xl: '3fr 1fr' }} gap={6}>
-            <Box order={{ base: 0, xl: 1 }} mb={{ base: 6, xl: 0 }}>
+          <Flex direction={{ base: 'column', xl: 'row' }} gap={6} align="stretch" wrap="wrap">
+            <Box flex="1" order={{ base: 0, xl: 1 }} w="full">
               <PingStatus />
             </Box>
 
-            <Box order={{ base: 1, xl: 0 }}>
+            <Box flex="2" order={{ base: 1, xl: 0 }} w="full">
               <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={6}>
                 <Box w="100%">
                   <GraficoClientesAtivadosMes />
@@ -129,13 +126,11 @@ export default function Dashboard() {
                 <TarefasNaoAtrasadasCard setTemNaoAtrasadas={setTemNaoAtrasadas} />
               </Box>
             </Box>
-          </Grid>
+          </Flex>
         )}
       </Box>
 
       <BottomBar />
-
-      {/* ✅ Chat flutuante no canto inferior direito */}
       <ChatFlutuante />
     </Box>
   );

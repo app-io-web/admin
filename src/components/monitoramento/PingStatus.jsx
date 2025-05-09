@@ -19,7 +19,7 @@ import {
     { nome: 'Clientes Bloqueados VIR', url: 'https://apidoixc.nexusnerds.com.br/data/clientes_bloqueados_atualizado.json' },
     { nome: 'Clientes Cancelados VIR', url: 'https://apidoixc.nexusnerds.com.br/data/clientes_canceladosVIR.json' },
     { nome: 'Rede Vivo', url: 'vivo.com.br' },
-    { nome: 'SmartOLT ONU Offline', url: 'grupomaxltda.smartolt.com' },
+    { nome: 'SmartOLT ONU Offline', url: 'https://grupomaxltda.smartolt.com' },
     { nome: 'WhatsApp', url: 'whatsapp.com' },
   ];
   
