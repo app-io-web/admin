@@ -51,6 +51,10 @@ const PERMISSIONS_LIST = [
   'PERM-[USER-ATALHOS-A.N0-Programas-úteis]',
   'PERM-[REIS-USER-ATALHOS-A.N0-Atalhos-Administrativo]',
   'PERM-[REIS-USER-ATALHOS-A.N0-Atalhos-Uteis]',
+  'PERM-[ADMIN-RELATORIO-ONU-HISTORICO]',
+  'PERM-[ADMIN-USER-CADASTRADOS]',
+  'PERM-[ADMIN-USER-EDITAR]',
+  
 ];
 
 // Criar o contexto

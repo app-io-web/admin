@@ -47,9 +47,12 @@ import ServicosPlanosPage from './pages/config-site/ServicosPlanosPage';
 import VendedoresPage from './pages/config-site/VendedoresPage';
 import CupomDescontoPage from './pages/config-site/CupomDescontoPage';
 
+import RelatorioOnus from './pages/monitoramento/RelatorioOnus';
 
 
 import ChatPage from './pages/chat/ChatPage';
+import UsuariosCadastradosPage from './pages/UsuariosCadastradosPage';
+import EditarUsuarioPage from './pages/EditarUsuarioPage';
 
 
 function App() {
@@ -81,8 +84,11 @@ function App() {
         <Route path="/atalhos" element={<AtalhosAdmin />} />
         <Route path="/cobranca" element={<DashboardCobranca />} />
         <Route path="/cobranca/config" element={<ConfiguracaoCobranca />} />
-        <Route path="/admin/createuser" element={<CreateUserPage />} />
+        <Route path="/cadastros/createuser" element={<CreateUserPage />} />
         <Route path="/permissions/:userId" element={<PermissionsPage />} />
+        <Route path="/editar-usuario/:id" element={<EditarUsuarioPage />} />
+
+        <Route path="/cadastros/usuarios-cadastrados" element={<UsuariosCadastradosPage />} />
         <Route path="/tarefas" element={<ToDoPage />} />
         <Route path="/kanban" element={<KanbanPage />} />
         <Route path="/kanban/:boardId" element={<KanbanBoard />} />
@@ -119,6 +125,10 @@ function App() {
         <Route path="/admin/avancado/config-site/cupom-desconto" element={<CupomDescontoPage />} />
 
         <Route path="/admin/chat" element={<ChatPage />} />
+
+        <Route path="relatorios/monitoramento/onus" element={<RelatorioOnus />} />
+
+
 
 
 

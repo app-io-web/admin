@@ -9,8 +9,13 @@ export default function MenuCadastros({ isCollapsed, isActive, search }) {
   const items = [
     {
       label: 'Criar Usuário',
-      path: '/admin/createuser',
+      path: '/cadastros/createuser',
       permission: 'PERM-[ADMIN-CREATE-USER]',
+    },
+    {
+      label: 'Usuários Cadastrados',
+      path: '/cadastros/usuarios-cadastrados',
+      permission: 'PERM-[ADMIN-USER-CADASTRADOS]',
     },
   ];
 

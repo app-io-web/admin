@@ -1,36 +1,15 @@
-//https://apidoixc.nexusnerds.com.br/data/Ordens_Agendadas.json 
-
-/*
-EXEMPLO DE JSON
-[
-  {
-    "setor": "Setor Desconhecido",
-    "status": "Agendados",
-    "id_tecnico": "22",
-    "tecnico": "ISAQUE CAMILO DE OLIVEIRA",
-    "id_cliente": "1260",
-    "razao": "Malu Noronha Jeronimo",
-    "telefone_celular": "(72) 99874-8746",
-    "endereco": "ES Viana 29138-028 NOVA BETANHIA - Rua rio Araguaia, 1",
-    "data_abertura": "2025-03-06 14:57:18",
-    "data_final": "Não especificada",
-    "assunto": "Cancelamento - Recolhimento  ",
-    "hoje": false,
-    "finalizadoMesPassado": false,
-    "finalizadoAnoPassado": false
-  },
-
-]
-
-*/
-
-
-
-
-// src/components/charts/GraficodeQuantidadeOrdensAgendadas.jsx
 import { useEffect, useState } from 'react';
-import { Box, Spinner, Text } from '@chakra-ui/react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Box, Spinner, Text, useColorModeValue } from '@chakra-ui/react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts';
 
 export default function GraficodeQuantidadeOrdensAgendadas() {
   const [dados, setDados] = useState([]);
@@ -51,7 +30,8 @@ export default function GraficodeQuantidadeOrdensAgendadas() {
 
         const resultado = Object.entries(contagem).map(([assunto, total]) => ({
           assunto,
-          total
+          assuntoCurto: assunto.length > 20 ? assunto.slice(0, 20) + '...' : assunto,
+          total,
         }));
 
         setDados(resultado);
@@ -65,6 +45,8 @@ export default function GraficodeQuantidadeOrdensAgendadas() {
     buscarDados();
   }, []);
 
+  const tooltipBg = useColorModeValue('#ffffff', '#1A202C');
+
   return (
     <Box w="100%" p={4} bg="whiteAlpha.100" borderRadius="md" boxShadow="md">
       <Text fontSize="lg" fontWeight="bold" mb={4}>Ordens Agendadas por Assunto</Text>
@@ -72,12 +54,18 @@ export default function GraficodeQuantidadeOrdensAgendadas() {
         <Spinner />
       ) : (
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={dados} layout="vertical">
+          <BarChart data={dados} layout="vertical" margin={{ top: 5, right: 30, left: 30, bottom: 40 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis type="number" />
-            <YAxis dataKey="assunto" type="category" />
-            <Tooltip />
-            <Bar dataKey="total" fill="#4299e1" />
+            <YAxis dataKey="assuntoCurto" type="category" width={150} />
+            <Tooltip
+              contentStyle={{ backgroundColor: tooltipBg }}
+              formatter={(value, name, props) => [`${value} ordens`, 'Total']}
+              labelFormatter={(label, payload) =>
+                payload?.[0]?.payload?.assunto || label
+              }
+            />
+            <Bar dataKey="total" fill="#3182ce" />
           </BarChart>
         </ResponsiveContainer>
       )}

@@ -32,6 +32,16 @@ export default function MenuRelatorios({ isCollapsed, isActive, search }) {
         },
       ],
     },
+    {
+      label: 'Relatório Técnico',
+      submenu: [
+        {
+          label: 'Relatório de ONU/ONT Offline',
+          path: '/relatorios/monitoramento/onus',
+          permission: 'PERM-[ADMIN-RELATORIO-ONU-HISTORICO]', // Nenhuma permissão específica para este item (ajustar se necessário)
+        },
+      ],
+    }
   ];
 
   // Filtra seções e submenus com base nas permissões e na busca

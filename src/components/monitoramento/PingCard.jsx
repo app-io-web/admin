@@ -1,133 +1,85 @@
-import { Box, Text, Badge, Spinner, Tooltip, Icon, useColorModeValue } from '@chakra-ui/react';
-import { useEffect, useState } from 'react';
-import { CheckCircleIcon, WarningIcon, NotAllowedIcon } from '@chakra-ui/icons';
+import { Box, Text, Badge, Icon, Tooltip, useColorModeValue } from '@chakra-ui/react';
+import { CheckCircleIcon, WarningIcon, NotAllowedIcon, TimeIcon } from '@chakra-ui/icons';
 
-export default function PingCard({ nome, url, interval = 60000 }) {
-  const [status, setStatus] = useState('verificando');
-  const [latency, setLatency] = useState(null);
-  const [lastUpdated, setLastUpdated] = useState(null);
-  const [error, setError] = useState(null);
-
+export default function PingCard({ nome, status, mensagem, latencia, atualizado }) {
   const bgColor = useColorModeValue('white', 'gray.800');
   const textColor = useColorModeValue('gray.800', 'gray.100');
-  const infoColor = useColorModeValue('gray.500', 'gray.400');
+  const infoColor = useColorModeValue('gray.600', 'gray.400');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
 
-  useEffect(() => {
-    const testarPing = async () => {
-      setStatus('verificando');
-      setError(null);
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        const start = Date.now();
-
-        const res = await fetch(url, { signal: controller.signal });
-        const end = Date.now();
-        clearTimeout(timeoutId);
-
-        if (res.ok) {
-          setStatus('online');
-          setLatency(end - start);
-        } else {
-          setStatus('falha');
-          setError(`HTTP ${res.status}`);
-        }
-      } catch (err) {
-        if (err.name === 'AbortError') {
-          setStatus('timeout');
-          setError('Tempo de resposta excedido');
-        } else {
-          setStatus('offline');
-          setError('Falha na conexão');
-        }
-      } finally {
-        setLastUpdated(new Date());
-      }
-    };
-
-    testarPing();
-    const intervalo = setInterval(testarPing, interval);
-    return () => clearInterval(intervalo);
-  }, [url, interval]);
-
-  const statusConfig = {
-    online: {
+  const statusMap = {
+    ONLINE: {
       color: 'green',
       icon: CheckCircleIcon,
       label: 'Serviço funcionando normalmente',
     },
-    offline: {
+    FALHA: {
+      color: 'red',
+      icon: NotAllowedIcon,
+      label: 'Erro no serviço',
+    },
+    OFFLINE: {
       color: 'red',
       icon: NotAllowedIcon,
       label: 'Serviço indisponível',
     },
-    falha: {
-      color: 'orange',
-      icon: WarningIcon,
-      label: 'Erro no serviço',
-    },
-    timeout: {
+    TIMEOUT: {
       color: 'yellow',
       icon: WarningIcon,
       label: 'Tempo de resposta excedido',
     },
-    verificando: {
+    VERIFICANDO: {
       color: 'gray',
-      icon: null,
+      icon: TimeIcon,
       label: 'Verificando status...',
     },
-  }[status];
+  };
+
+  const config = statusMap[status?.toUpperCase()] || statusMap.FALHA;
 
   return (
     <Box
-      p={3}
+      p={4}
       borderWidth="1px"
       borderRadius="md"
       boxShadow="sm"
       bg={bgColor}
-      borderColor={borderColor}
+      borderColor={config.color + '.300'}
       transition="all 0.2s"
       _hover={{ boxShadow: 'md' }}
       width="100%"
-      maxWidth="300px"
+      maxW="300px"
     >
-      <Text fontWeight="medium" fontSize="md" mb={2} color={textColor}>
+      <Text fontWeight="semibold" fontSize="md" mb={2} color={textColor}>
         {nome}
       </Text>
 
-      <Tooltip label={statusConfig.label + (error ? ` (${error})` : '')}>
+      <Tooltip label={config.label + (mensagem ? ` (${mensagem})` : '')}>
         <Badge
-          colorScheme={statusConfig.color}
+          colorScheme={config.color}
           fontSize="xs"
           px={2}
           py={0.5}
-          borderRadius="sm"
+          borderRadius="md"
           display="flex"
           alignItems="center"
           textTransform="uppercase"
+          mb={2}
         >
-          {status === 'verificando' ? (
-            <Spinner size="xs" mr={1.5} />
-          ) : (
-            statusConfig.icon && <Icon as={statusConfig.icon} mr={1.5} boxSize={3.5} />
-          )}
-          {status.toUpperCase()}
+          <Icon as={config.icon} mr={1.5} boxSize={3.5} />
+          {status}
         </Badge>
       </Tooltip>
 
-      {latency && status === 'online' && (
-        <Text fontSize="xs" color={infoColor} mt={1.5}>
-          Latência: {latency}ms
+      {latencia !== null && (
+        <Text fontSize="xs" color={infoColor}>
+          ⏱ Latência: {latencia}ms
         </Text>
       )}
-      {lastUpdated && (
-        <Text fontSize="xs" color={infoColor} mt={1}>
-          Atualizado: {lastUpdated.toLocaleTimeString('pt-BR', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-          })}
+
+      {atualizado && (
+        <Text fontSize="xs" color={infoColor}>
+          🕒 Atualizado: {atualizado}
         </Text>
       )}
     </Box>

@@ -7,6 +7,8 @@ import BottomBar from '../components/layout/BottomBar';
 import PerfilUsuarioDesktop from '../components/layout/PerfilUsuarioDesktop';
 
 export default function CreateUserPage() {
+  const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+
   return (
     <Grid
       templateColumns={{ base: '1fr', md: '250px 1fr 400px' }}
