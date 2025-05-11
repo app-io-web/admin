@@ -10,7 +10,14 @@ export default function ModalEdicaoVenda({ isOpen, onClose, registros = [] }) {
   const [ativado, setAtivado] = useState(false);
   const [desistiu, setDesistiu] = useState(false);
   const [comissao, setComissao] = useState('R$ 0,00');
+  const [desativado, setDesativado] = useState(false);
   const toast = useToast();
+  const [statusIXC, setStatusIXC] = useState({
+  ativado: false,
+  bloqueado: false,
+  desistiu: false
+});
+
 
   const cliente = registros[0];
 
@@ -23,7 +30,8 @@ export default function ModalEdicaoVenda({ isOpen, onClose, registros = [] }) {
     setComissao('R$ 0,00');
   };
 
-  const calcularComissao = async (ativo, bloqueado, desistiu, pagouTaxa) => {
+  const calcularComissao = async (ativo, bloqueado, desistiu, pagouTaxa, desativado = false) => {
+
     try {
       const token = import.meta.env.VITE_NOCODB_TOKEN;
 
@@ -49,7 +57,7 @@ export default function ModalEdicaoVenda({ isOpen, onClose, registros = [] }) {
       const comissoesTabela = comissoesData.list?.[0]?.Valores_Comissão?.comissoes || {};
 
       let valorFinal = 'R$ 0,00';
-      if (desistiu || (ativo && bloqueado)) {
+      if (desistiu || desativado || (ativo && bloqueado)) {
         valorFinal = 'R$ 0,00';
       } else if (ativo && pagouTaxa) {
         valorFinal = comissoesTabela?.[classificacao]?.valor || 'R$ 0,00';
@@ -98,6 +106,20 @@ export default function ModalEdicaoVenda({ isOpen, onClose, registros = [] }) {
         setAtivado(estaAtivo);
         setDesistiu(estaDesistiu);
 
+        setStatusIXC({
+          ativado: estaAtivo,
+          bloqueado: estaBloqueado,
+          desistiu: estaDesistiu
+        });
+        setDesativado(!estaAtivo && !estaBloqueado && !estaDesistiu);
+
+        console.log('🔍 Status do IXC:', {
+          ativado: estaAtivo,
+          bloqueado: estaBloqueado,
+          desistiu: estaDesistiu
+        });
+
+
         const controleRes = await fetch('https://nocodb.nexusnerds.com.br/api/v2/tables/m8xz7i1uldvt2gr/records', {
           headers: { 'Content-Type': 'application/json', 'xc-token': token }
         });
@@ -120,47 +142,78 @@ export default function ModalEdicaoVenda({ isOpen, onClose, registros = [] }) {
     fetchStatus();
   }, [cliente]);
 
-  const salvarEdicao = async () => {
-    try {
-      const token = import.meta.env.VITE_NOCODB_TOKEN;
-      const cpf = cliente.cpf;
-      const formatado = cpf.replace(/\D/g, '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+const salvarEdicao = async () => {
+  try {
+    const token = import.meta.env.VITE_NOCODB_TOKEN;
+    const cpfFormatado = cliente.cpf.replace(/\D/g, '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    const nomeVendedor = cliente.vendedor?.trim();
 
-      const dadosAtualizados = {
-        [formatado]: {
-          "Pagou Taxa": pagouTaxa ? "SIM" : "NAO",
-          "Ativado": ativado ? "SIM" : "NAO",
-          "Bloqueado": bloqueado ? "SIM" : "NAO",
-          "Desistiu": desistiu ? "SIM" : "NAO",
-          "Autorizado": ativado ? "APROVADO" : null
-        }
-      };
+    const dadosAtualizados = {
+      [cpfFormatado]: {
+        "Pagou Taxa": pagouTaxa ? "SIM" : "NAO",
+        "Ativado": statusIXC.ativado ? "SIM" : "NAO",
+        "Bloqueado": statusIXC.bloqueado ? "SIM" : "NAO",
+        "Desistiu": statusIXC.desistiu ? "SIM" : "NAO",
+        "Autorizado":
+          statusIXC.ativado
+            ? "APROVADO"
+            : (statusIXC.bloqueado || statusIXC.desistiu)
+            ? null
+            : "DESATIVADO"
+      }
+    };
 
-      const controleRes = await fetch('https://nocodb.nexusnerds.com.br/api/v2/tables/m8xz7i1uldvt2gr/records', {
-        headers: { 'Content-Type': 'application/json', 'xc-token': token }
-      });
 
-      const controleData = await controleRes.json();
-      const registro = controleData.list?.[0];
-      if (!registro) throw new Error('Registro de Controle de Vendas não encontrado.');
+    // 🧠 Busca todos os registros da tabela para localizar o ID correto
+    const res = await fetch('https://nocodb.nexusnerds.com.br/api/v2/tables/m8xz7i1uldvt2gr/records', {
+      headers: { 'Content-Type': 'application/json', 'xc-token': token }
+    });
+    const data = await res.json();
+    const registros = data.list || [];
 
-      const id = registro.Id;
-      const atual = registro.DadosClientesVendedores || {};
-      const atualizado = { ...atual, ...dadosAtualizados };
+    // 🔍 Localiza o registro que tem o Title igual ao nome do vendedor
+    const registroVendedor = registros.find(r =>
+      r.Title?.toLowerCase().trim() === nomeVendedor.toLowerCase()
+    );
 
-      await fetch('https://nocodb.nexusnerds.com.br/api/v2/tables/m8xz7i1uldvt2gr/records', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'xc-token': token },
-        body: JSON.stringify({ Id: id, DadosClientesVendedores: atualizado })
-      });
+    if (!registroVendedor) throw new Error(`Registro do vendedor '${nomeVendedor}' não encontrado.`);
 
-      toast({ title: 'Alterações salvas com sucesso.', status: 'success', isClosable: true });
-      onClose();
-    } catch (error) {
-      console.error('Erro ao salvar:', error);
-      toast({ title: 'Erro ao salvar.', status: 'error', isClosable: true });
-    }
-  };
+    const id = registroVendedor.Id;
+    const atual = registroVendedor.DadosClientesVendedores || {};
+
+    const atualizado = {
+      ...atual,
+      ...dadosAtualizados
+    };
+
+    // 📝 Salva apenas no registro correto do vendedor
+    console.log('💾 Salvando edição com os dados:', {
+      vendedor: nomeVendedor,
+      cpf: cpfFormatado,
+      statusIXC,
+      dadosAtualizados
+    });
+
+    // 📝 Salva apenas no registro correto do vendedor
+    await fetch('https://nocodb.nexusnerds.com.br/api/v2/tables/m8xz7i1uldvt2gr/records', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'xc-token': token },
+      body: JSON.stringify({
+        Id: id,
+        DadosClientesVendedores: atualizado
+      })
+    });
+
+    toast({ title: 'Alterações salvas com sucesso.', status: 'success', isClosable: true });
+    onClose();
+
+  } catch (error) {
+    console.error('Erro ao salvar:', error);
+    toast({ title: 'Erro ao salvar edição.', status: 'error', isClosable: true });
+  }
+};
+
+
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="lg">
@@ -183,26 +236,31 @@ export default function ModalEdicaoVenda({ isOpen, onClose, registros = [] }) {
               <Checkbox isChecked={pagouTaxa} onChange={(e) => {
                 const novo = e.target.checked;
                 setPagouTaxa(novo);
-                calcularComissao(ativado, bloqueado, desistiu, novo);
+                calcularComissao(ativado, bloqueado, desistiu, pagouTaxa, desativado);
               }}>Pagou Taxa</Checkbox>
 
               <Checkbox isChecked={bloqueado} onChange={(e) => {
                 const novo = e.target.checked;
                 setBloqueado(novo);
-                calcularComissao(ativado, novo, desistiu, pagouTaxa);
+                calcularComissao(ativado, bloqueado, desistiu, pagouTaxa, desativado);
               }}>Bloqueado</Checkbox>
 
               <Checkbox isChecked={ativado} onChange={(e) => {
                 const novo = e.target.checked;
                 setAtivado(novo);
-                calcularComissao(novo, bloqueado, desistiu, pagouTaxa);
+                calcularComissao(ativado, bloqueado, desistiu, pagouTaxa, desativado);
               }}>Ativado</Checkbox>
 
               <Checkbox isChecked={desistiu} onChange={(e) => {
                 const novo = e.target.checked;
                 setDesistiu(novo);
-                calcularComissao(ativado, bloqueado, novo, pagouTaxa);
+                calcularComissao(ativado, bloqueado, desistiu, pagouTaxa, desativado);
               }}>Desistiu</Checkbox>
+
+              <Checkbox isChecked={desativado} isReadOnly>
+                Desativado
+              </Checkbox>
+
 
               <Box pt={4} w="100%">
                 <button onClick={salvarEdicao} className="chakra-button css-1mqu3fl">Salvar</button>
