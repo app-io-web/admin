@@ -54,6 +54,10 @@ import ChatPage from './pages/chat/ChatPage';
 import UsuariosCadastradosPage from './pages/UsuariosCadastradosPage';
 import EditarUsuarioPage from './pages/EditarUsuarioPage';
 
+import RelatorioVendedoresLista from './pages/relatorios/RelatorioVendedoresListaPage';
+import RelatorioVendasMesPage from './pages/relatorios/VendasMesPage';
+import RelatorioVendasGeralPage from './pages/relatorios/RelatorioVendasGeralPage_TEMP';
+
 
 function App() {
 
@@ -127,8 +131,9 @@ function App() {
         <Route path="/admin/chat" element={<ChatPage />} />
 
         <Route path="relatorios/monitoramento/onus" element={<RelatorioOnus />} />
-
-
+        <Route path="/relatorios/vendas" element={<RelatorioVendedoresLista />} />
+        <Route path="/relatorios/vendas/:vendedorId" element={<RelatorioVendasMesPage />} />
+        <Route path="/relatorios/vendas/geral" element={<RelatorioVendasGeralPage />} />
 
 
 

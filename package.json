@@ -22,6 +22,7 @@
     "@mui/styled-engine-sc": "^7.0.2",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
+    "file-saver": "^2.0.5",
     "framer-motion": "^12.7.4",
     "googleapis": "^148.0.0",
     "howler": "^2.2.4",

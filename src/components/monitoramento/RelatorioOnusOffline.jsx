@@ -17,11 +17,24 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/pt-br';
 import * as XLSX from 'xlsx';
+import ModalInfoOnu from './ModalInfoOnu';
 
 dayjs.extend(relativeTime);
 dayjs.locale('pt-br');
 
 const ITENS_POR_PAGINA = 18;
+
+const traduzirStatusInternet = (codigo) => {
+  switch (codigo) {
+    case 'A': return { label: 'Ativo', color: 'green' };
+    case 'D': return { label: 'Desativado', color: 'gray' };
+    case 'CM': return { label: 'Bloq. Manual', color: 'red' };
+    case 'CA': return { label: 'Bloq. Automático', color: 'orange' };
+    case 'FA': return { label: 'Financeiro', color: 'red' };
+    case 'AA': return { label: 'Assinatura', color: 'yellow' };
+    default: return { label: '---', color: 'gray' };
+  }
+};
 
 export default function RelatorioOnusOffline() {
   const [dados, setDados] = useState([]);
@@ -29,9 +42,13 @@ export default function RelatorioOnusOffline() {
   const [carregando, setCarregando] = useState(false);
   const [finalizado, setFinalizado] = useState(false);
   const [erro, setErro] = useState('');
+  const [modalOnuId, setModalOnuId] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const jaIniciou = useRef(false);
   const [ultimaVerificacao, setUltimaVerificacao] = useState(null);
   const [mensagemLenta, setMensagemLenta] = useState(false);
+  const [onusData, setOnusData] = useState([]); // Novo estado para armazenar ONUs
+  const [contratosData, setContratosData] = useState([]); // Novo estado para armazenar contratos
 
   const bg = useColorModeValue('whiteAlpha.700', 'gray.800');
   const border = useColorModeValue('gray.200', 'gray.600');
@@ -75,15 +92,45 @@ export default function RelatorioOnusOffline() {
     const valor = parseInt(parts[0]);
     const unidade = parts[1]?.replace(/s?$/, '') || 'minute';
     return [isNaN(valor) ? 0 : valor, unidade];
+
+
   };
 
-  const iniciarStream = () => {
+  const fetchOnusAndContratos = async () => {
+    try {
+      const resOnus = await fetch('https://apidoixc.nexusnerds.com.br/Data/onus.json');
+      const listaOnus = await resOnus.json();
+      const onus = listaOnus.registros || listaOnus.data || [];
+      setOnusData(onus);
+
+      const resContratos = await fetch('https://apidoixc.nexusnerds.com.br/Data/todos_contratos.json');
+      const contratosRes = await resContratos.json();
+      const contratos = contratosRes.registros || [];
+      setContratosData(contratos);
+
+      return { onus, contratos };
+    } catch (err) {
+      console.error('❌ Erro ao buscar ONUs e contratos:', err);
+      return { onus: [], contratos: [] };
+    }
+  };
+
+  const enriquecerOnu = (onu) => {
+    const onuMatch = onusData.find(o => o.mac === onu.onu_id);
+    const contrato = onuMatch ? contratosData.find(c => String(c.id) === String(onuMatch.id_contrato)) : null;
+    return { ...onu, status_internet: contrato?.status_internet || '---' };
+  };
+
+  const iniciarStream = async () => {
     sessionStorage.setItem('ja_usou_stream', '1');
     setCarregando(true);
     setFinalizado(false);
     setErro('');
     setDados([]);
     setPaginaAtual(1);
+
+    // Buscar ONUs e contratos antes de iniciar o stream
+    await fetchOnusAndContratos();
 
     const source = new EventSource('https://powerfail.smartolt.nexusnerds.com.br/api/onus-stream');
     const novosDados = [];
@@ -92,8 +139,9 @@ export default function RelatorioOnusOffline() {
       try {
         const novaOnu = JSON.parse(event.data);
         const parsed = parsePowerFail(novaOnu);
-        novosDados.push(parsed);
-        setDados((prev) => [...prev, parsed]);
+        const enriquecida = enriquecerOnu(parsed); // Enriquecer com status_internet
+        novosDados.push(enriquecida);
+        setDados((prev) => [...prev, enriquecida]);
       } catch (err) {
         console.error('❌ Erro ao parsear mensagem SSE:', err);
       }
@@ -105,6 +153,7 @@ export default function RelatorioOnusOffline() {
       setDados(ordenados);
       setFinalizado(true);
       setCarregando(false);
+      setUltimaVerificacao(dayjs());
       source.close();
     });
 
@@ -128,7 +177,16 @@ export default function RelatorioOnusOffline() {
         .map(parsePowerFail)
         .sort((a, b) => prioridadePeso[a.prioridade] - prioridadePeso[b.prioridade]);
 
-      setDados(processados);
+      // Buscar ONUs e contratos
+      const { onus, contratos } = await fetchOnusAndContratos();
+
+      const enriquecidos = processados.map(item => {
+        const onuMatch = onus.find(o => o.mac === item.onu_id);
+        const contrato = onuMatch ? contratos.find(c => String(c.id) === String(onuMatch.id_contrato)) : null;
+        return { ...item, status_internet: contrato?.status_internet || '---' };
+      });
+
+      setDados(enriquecidos);
       setFinalizado(true);
       setUltimaVerificacao(dayjs(json.verificado_em));
     } catch (err) {
@@ -136,6 +194,51 @@ export default function RelatorioOnusOffline() {
       console.error('❌ Erro ao carregar histórico:', err);
     } finally {
       setCarregando(false);
+    }
+  };
+
+  const exportarParaExcel = async () => {
+    try {
+      const resClientes = await fetch('https://apidoixc.nexusnerds.com.br/Data/clientesAtivos.json');
+      const clientesRes = await resClientes.json();
+      const clientes = clientesRes.registros || [];
+
+      const enrichedData = dadosFiltrados.map((item) => {
+        const onu = onusData.find(o => o.mac === item.onu_id);
+        const contrato = onu ? contratosData.find(c => String(c.id) === String(onu.id_contrato)) : null;
+        const cliente = contrato ? clientes.find(c => String(c.id) === String(contrato.id_cliente)) : null;
+
+        const nome = cliente?.fantasia || '---';
+        const telefone = cliente?.telefone_celular || cliente?.whatsapp || '---';
+        const latitude = cliente?.latitude;
+        const longitude = cliente?.longitude;
+        const linkMaps = latitude && longitude
+          ? `https://www.google.com/maps?q=${latitude},${longitude}`
+          : '---';
+        const statusInternet = traduzirStatusInternet(item.status_internet).label;
+
+        return {
+          Usuário: item.usuario,
+          'ONU ID': item.onu_id,
+          'Status': item.power_fail,
+          'Tempo Offline': item.tempoFormatado,
+          Prioridade: item.prioridade.toUpperCase(),
+          'Status Internet': statusInternet,
+          'Nome do Cliente': nome,
+          'Telefone': telefone,
+          'Localização (Google Maps)': linkMaps,
+        };
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(enrichedData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Relatório ONU');
+
+      const nomeArquivo = `Relatorio_ONUs_Offline_${dayjs().format('YYYY-MM-DD_HH-mm')}.xlsx`;
+      XLSX.writeFile(workbook, nomeArquivo);
+    } catch (e) {
+      console.error('❌ Erro ao exportar XLSX com dados enriquecidos:', e);
+      alert('Erro ao exportar os dados. Tente novamente.');
     }
   };
 
@@ -153,13 +256,7 @@ export default function RelatorioOnusOffline() {
           const dataJson = dayjs(json.verificado_em).format('YYYY-MM-DD');
 
           if (dataJson === hoje) {
-            setUltimaVerificacao(dayjs(json.verificado_em));
-            const prioridadePeso = { red: 1, yellow: 2, orange: 3, green: 4 };
-            const processados = json.data
-              .map(parsePowerFail)
-              .sort((a, b) => prioridadePeso[a.prioridade] - prioridadePeso[b.prioridade]);
-            setDados(processados);
-            setFinalizado(true);
+            await carregarHistorico();
             return;
           }
         }
@@ -187,24 +284,6 @@ export default function RelatorioOnusOffline() {
     }
     return () => clearTimeout(timeout);
   }, [carregando]);
-
-  const exportarParaExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(
-      dadosFiltrados.map(item => ({
-        Usuário: item.usuario,
-        'ONU ID': item.onu_id,
-        'Status': item.power_fail,
-        'Tempo Offline': item.tempoFormatado,
-        Prioridade: item.prioridade.toUpperCase()
-      }))
-    );
-
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Relatório ONU');
-
-    const nomeArquivo = `Relatorio_ONUs_Offline_${dayjs().format('YYYY-MM-DD_HH-mm')}.xlsx`;
-    XLSX.writeFile(workbook, nomeArquivo);
-  };
 
   return (
     <Box p={6} bg={bg} borderWidth="1px" borderRadius="md" borderColor={border} boxShadow="md">
@@ -268,9 +347,21 @@ export default function RelatorioOnusOffline() {
                 borderRadius="md"
                 bg={`${item.prioridade}.50`}
                 borderColor={`${item.prioridade}.300`}
+                cursor="pointer"
+                onClick={() => {
+                  setModalOnuId(item.onu_id);
+                  setIsModalOpen(true);
+                }}
               >
                 <HStack justify="space-between">
-                  <Text fontWeight="bold">{item.usuario}</Text>
+                  <HStack spacing={2}>
+                    <Text fontWeight="bold">{item.usuario}</Text>
+                    {item.status_internet && (
+                      <Tag size="sm" colorScheme={traduzirStatusInternet(item.status_internet).color}>
+                        {traduzirStatusInternet(item.status_internet).label}
+                      </Tag>
+                    )}
+                  </HStack>
                   <Icon as={WarningTwoIcon} color={`${item.prioridade}.500`} />
                 </HStack>
                 <Text fontSize="sm">ONU ID: {item.onu_id}</Text>
@@ -315,6 +406,12 @@ export default function RelatorioOnusOffline() {
           ✅ Verificação finalizada.
         </Text>
       )}
+
+      <ModalInfoOnu
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onuId={modalOnuId}
+      />
     </Box>
   );
 }

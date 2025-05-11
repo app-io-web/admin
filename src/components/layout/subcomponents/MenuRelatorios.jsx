@@ -41,6 +41,16 @@ export default function MenuRelatorios({ isCollapsed, isActive, search }) {
           permission: 'PERM-[ADMIN-RELATORIO-ONU-HISTORICO]', // Nenhuma permissão específica para este item (ajustar se necessário)
         },
       ],
+    },
+    {
+      label: 'Relatório Vendas',
+      submenu: [
+        {
+          label: 'Relatório de Vendas',
+          path: '/relatorios/vendas',
+          permission: 'PERM-[ADMIN-RELATORIO-ONU-HISTORICO]', // Nenhuma permissão específica para este item (ajustar se necessário)
+        },
+      ],
     }
   ];
 

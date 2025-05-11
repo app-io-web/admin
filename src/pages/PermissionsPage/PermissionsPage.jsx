@@ -62,6 +62,7 @@ const PermissionsPage = () => {
         'PERM-[ADMIN-RELATORIO-ONU-HISTORICO]',
         'PERM-[ADMIN-USER-CADASTRADOS]',
         'PERM-[ADMIN-USER-EDITAR]',
+        'PERM-[ADMIN-RELATORIO-VENDAS-MENSAL]'
       ],
     },
     avancadoN1: {
