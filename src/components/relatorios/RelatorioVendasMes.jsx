@@ -319,7 +319,19 @@ const exportarParaExcel = () => {
                 <Text fontSize="sm">CPF: {venda.cpf}</Text>
                 <Text fontSize="sm">Plano: {venda.plano}</Text>
                 <Text fontSize="sm">Data: {venda.dataHora}</Text>
-                <Tag colorScheme={status.color} mt={2}>{status.label}</Tag>
+                <HStack spacing={2} mt={2} wrap="wrap">
+                  <Tag colorScheme={status.color}>{status.label}</Tag>
+                  {(() => {
+                    const hoje = new Date().toISOString().split('T')[0];
+                    const [dia, mes, ano] = venda.dataHora.split(',')[0].split('/');
+                    const dataVenda = new Date(`${ano}-${mes}-${dia}`).toISOString().split('T')[0];
+                    return dataVenda === hoje ? (
+                      <Tag colorScheme="purple">Nova Venda</Tag>
+                    ) : null;
+                  })()}
+                </HStack>
+
+
               </Box>
             );
           })}
