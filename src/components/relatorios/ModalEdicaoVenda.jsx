@@ -22,19 +22,20 @@ export default function ModalEdicaoVenda({ isOpen, onClose, registros = [] }) {
   const cliente = registros[0];
 
   // Função para reiniciar os estados
-  const resetStates = () => {
-    setPagouTaxa(false);
-    setBloqueado(false);
-    setAtivado(false);
-    setDesistiu(false);
-    setComissao('R$ 0,00');
-  };
+    const resetStates = () => {
+      setPagouTaxa(false);
+      setBloqueado(false);
+      setAtivado(false);
+      setDesistiu(false);
+      setDesativado(false);
+      setComissao('R$ 0,00');
+    }
 
   const calcularComissao = async (ativo, bloqueado, desistiu, pagouTaxa, desativado = false) => {
-
     try {
       const token = import.meta.env.VITE_NOCODB_TOKEN;
 
+      // 🧠 Buscar classificação do vendedor
       const vendedoresRes = await fetch('https://nocodb.nexusnerds.com.br/api/v2/tables/m3cqlvi5625ahqs/records', {
         headers: { 'Content-Type': 'application/json', 'xc-token': token }
       });
@@ -50,6 +51,7 @@ export default function ModalEdicaoVenda({ isOpen, onClose, registros = [] }) {
         }
       }
 
+      // 🧠 Buscar valores de comissão
       const comissoesRes = await fetch('https://nocodb.nexusnerds.com.br/api/v2/tables/m007s1znd8hpu6r/records', {
         headers: { 'Content-Type': 'application/json', 'xc-token': token }
       });
@@ -57,6 +59,7 @@ export default function ModalEdicaoVenda({ isOpen, onClose, registros = [] }) {
       const comissoesTabela = comissoesData.list?.[0]?.Valores_Comissão?.comissoes || {};
 
       let valorFinal = 'R$ 0,00';
+
       if (desistiu || desativado || (ativo && bloqueado)) {
         valorFinal = 'R$ 0,00';
       } else if (ativo && pagouTaxa) {
@@ -70,6 +73,14 @@ export default function ModalEdicaoVenda({ isOpen, onClose, registros = [] }) {
       console.error("Erro ao calcular comissão:", err);
     }
   };
+
+
+const formatarCpf = (cpf) => {
+  const limpo = cpf.replace(/\D/g, '');
+  return limpo.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+};
+
+
 
   useEffect(() => {
     if (!cliente) {
@@ -113,20 +124,29 @@ export default function ModalEdicaoVenda({ isOpen, onClose, registros = [] }) {
         });
         setDesativado(!estaAtivo && !estaBloqueado && !estaDesistiu);
 
-        console.log('🔍 Status do IXC:', {
-          ativado: estaAtivo,
-          bloqueado: estaBloqueado,
-          desistiu: estaDesistiu
-        });
+//        console.log('🔍 Status do IXC:', {
+//          ativado: estaAtivo,
+//          bloqueado: estaBloqueado,
+//          desistiu: estaDesistiu
+//        });
 
 
         const controleRes = await fetch('https://nocodb.nexusnerds.com.br/api/v2/tables/m8xz7i1uldvt2gr/records', {
           headers: { 'Content-Type': 'application/json', 'xc-token': token }
         });
         const controleData = await controleRes.json();
-        const registro = controleData.list?.[0];
+        const nomeVendedor = cliente.vendedor?.trim().toLowerCase();
+        const registro = controleData.list?.find(r => r.Title?.toLowerCase().trim() === nomeVendedor);
+
         const dadosSalvos = registro?.DadosClientesVendedores || {};
-        const dadosCliente = dadosSalvos[cliente.cpf];
+
+
+
+
+
+        const cpfFormatado = formatarCpf(cliente.cpf);
+        const dadosCliente = dadosSalvos[cpfFormatado];
+
 
         if (dadosCliente) {
           setPagouTaxa(dadosCliente["Pagou Taxa"] === "SIM");
@@ -145,7 +165,7 @@ export default function ModalEdicaoVenda({ isOpen, onClose, registros = [] }) {
 const salvarEdicao = async () => {
   try {
     const token = import.meta.env.VITE_NOCODB_TOKEN;
-    const cpfFormatado = cliente.cpf.replace(/\D/g, '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    const cpfFormatado = formatarCpf(cliente.cpf); // mesma função!
     const nomeVendedor = cliente.vendedor?.trim();
 
     const dadosAtualizados = {
@@ -187,12 +207,12 @@ const salvarEdicao = async () => {
     };
 
     // 📝 Salva apenas no registro correto do vendedor
-    console.log('💾 Salvando edição com os dados:', {
-      vendedor: nomeVendedor,
-      cpf: cpfFormatado,
-      statusIXC,
-      dadosAtualizados
-    });
+    //console.log('💾 Salvando edição com os dados:', {
+      //vendedor: nomeVendedor,
+      //cpf: cpfFormatado,
+      //statusIXC,
+      //dadosAtualizados
+   //});
 
     // 📝 Salva apenas no registro correto do vendedor
     await fetch('https://nocodb.nexusnerds.com.br/api/v2/tables/m8xz7i1uldvt2gr/records', {
@@ -233,33 +253,30 @@ const salvarEdicao = async () => {
                 <Text fontSize="lg" color="green.500">💰 {comissao}</Text>
               </Box>
 
-              <Checkbox isChecked={pagouTaxa} onChange={(e) => {
-                const novo = e.target.checked;
-                setPagouTaxa(novo);
-                calcularComissao(ativado, bloqueado, desistiu, pagouTaxa, desativado);
-              }}>Pagou Taxa</Checkbox>
+                <Checkbox isChecked={pagouTaxa} onChange={(e) => {
+                  const novo = e.target.checked;
+                  setPagouTaxa(novo);
+                  calcularComissao(ativado, bloqueado, desistiu, novo, desativado); // usa o novo valor
+                }}>Pagou Taxa</Checkbox>
 
-              <Checkbox isChecked={bloqueado} onChange={(e) => {
-                const novo = e.target.checked;
-                setBloqueado(novo);
-                calcularComissao(ativado, bloqueado, desistiu, pagouTaxa, desativado);
-              }}>Bloqueado</Checkbox>
+                <Checkbox isChecked={bloqueado} onChange={(e) => {
+                  const novo = e.target.checked;
+                  setBloqueado(novo);
+                  calcularComissao(ativado, novo, desistiu, pagouTaxa, desativado); // usa o novo valor
+                }}>Bloqueado</Checkbox>
 
-              <Checkbox isChecked={ativado} onChange={(e) => {
-                const novo = e.target.checked;
-                setAtivado(novo);
-                calcularComissao(ativado, bloqueado, desistiu, pagouTaxa, desativado);
-              }}>Ativado</Checkbox>
+                <Checkbox isChecked={ativado} onChange={(e) => {
+                  const novo = e.target.checked;
+                  setAtivado(novo);
+                  calcularComissao(novo, bloqueado, desistiu, pagouTaxa, desativado); // usa o novo valor
+                }}>Ativado</Checkbox>
 
-              <Checkbox isChecked={desistiu} onChange={(e) => {
-                const novo = e.target.checked;
-                setDesistiu(novo);
-                calcularComissao(ativado, bloqueado, desistiu, pagouTaxa, desativado);
-              }}>Desistiu</Checkbox>
-
-              <Checkbox isChecked={desativado} isReadOnly>
-                Desativado
-              </Checkbox>
+                <Checkbox isChecked={desistiu} onChange={(e) => {
+                  const novo = e.target.checked;
+                  setDesistiu(novo);
+                  calcularComissao(ativado, bloqueado, novo, pagouTaxa, desativado); // usa o novo valor
+                }}>Desistiu</Checkbox>
+              
 
 
               <Box pt={4} w="100%">

@@ -1,7 +1,7 @@
 // src/components/relatorios/RelatorioVendasMes.jsx
 import {
   Box, Text, Heading, Tag, Spinner, SimpleGrid, useColorModeValue,
-  Select, useDisclosure, HStack, Switch, Flex, VStack,Button 
+  Select, useDisclosure, HStack, Switch, Flex, VStack, Button 
 } from '@chakra-ui/react';
 
 import {
@@ -14,7 +14,6 @@ import {
   ModalFooter,
   Checkbox
 } from '@chakra-ui/react';
-
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -35,77 +34,113 @@ export default function RelatorioVendasMes() {
   const [comissaoTotal, setComissaoTotal] = useState('R$ 0,00');
   const { isOpen: isModalOpen, onOpen: openModal, onClose: closeModal } = useDisclosure();
 
-
-
   const [colunasSelecionadas, setColunasSelecionadas] = useState({
-  Nome: true,
-  CPF: true,
-  Plano: true,
-  Data: true,
-  'Status Contrato': true,
-  'Pagou a Taxa': true,
-  Comissão: true,
-});
+    Nome: true,
+    CPF: true,
+    Plano: true,
+    Data: true,
+    'Status Contrato': true,
+    'Pagou a Taxa': true,
+    Comissão: true,
+  });
 
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
 
 useEffect(() => {
   let intervalo;
 
   const buscarDados = async () => {
     try {
-      const vendedoresRes = await fetch('https://max.api.email.nexusnerds.com.br/api/vendedores');
-      const vendedores = await vendedoresRes.json();
-      const vendedorMatch = vendedores.find(v => v.vendedor === vendedorId);
+      const token = import.meta.env.VITE_NOCODB_TOKEN;
 
-      if (!vendedorMatch) {
-        console.error('Vendedor não encontrado na lista');
-        return;
+      // 🔍 Buscar dados da tabela de vendedores com classificação
+      const vendedoresRes = await fetch('https://nocodb.nexusnerds.com.br/api/v2/tables/m3cqlvi5625ahqs/records', {
+        headers: { 'Content-Type': 'application/json', 'xc-token': token }
+      });
+      const vendedoresJson = await vendedoresRes.json();
+      const vendedoresData = vendedoresJson?.list?.[0]?.Vendedor || {};
+
+      // 🔍 Buscar classificação com base no nome (não no ID)
+      let classificacao = 'Sem classificação';
+      for (const key in vendedoresData) {
+        const item = vendedoresData[key];
+        if (item?.nome?.toLowerCase().trim() === vendedorId.toLowerCase().trim()) {
+          classificacao = item?.Classificação || 'Sem classificação';
+          break;
+        }
       }
 
-      const clientesAtivosRes = await fetch('https://apidoixc.nexusnerds.com.br/Data/clientesAtivos.json');
-      const clientesAtivosJson = await clientesAtivosRes.json();
-      const clientesAtivos = clientesAtivosJson.registros;
+      // 🔍 Buscar tabela de comissões
+      const comissaoRes = await fetch('https://nocodb.nexusnerds.com.br/api/v2/tables/m007s1znd8hpu6r/records', {
+        headers: { 'Content-Type': 'application/json', 'xc-token': token }
+      });
+      const comissaoJson = await comissaoRes.json();
+      const tabelaComissoes = comissaoJson?.list?.[0]?.Valores_Comissão?.comissoes || {};
 
-      const contratosRes = await fetch('https://apidoixc.nexusnerds.com.br/Data/todos_contratos.json');
-      const contratosJson = await contratosRes.json();
+      // 🔍 Demais dados
+      const [clientesAtivosJson, contratosJson, controleJson, vendasRes] = await Promise.all([
+        fetch('https://apidoixc.nexusnerds.com.br/Data/clientesAtivos.json').then(r => r.json()),
+        fetch('https://apidoixc.nexusnerds.com.br/Data/todos_contratos.json').then(r => r.json()),
+        fetch('https://nocodb.nexusnerds.com.br/api/v2/tables/m8xz7i1uldvt2gr/records', {
+          headers: { 'Content-Type': 'application/json', 'xc-token': token }
+        }).then(r => r.json()),
+        fetch(`https://max.api.email.nexusnerds.com.br/api/vendedores`).then(r => r.json())
+      ]);
+
+      const clientesAtivos = clientesAtivosJson.registros;
       const contratos = contratosJson.registros;
 
-      const controleRes = await fetch('https://nocodb.nexusnerds.com.br/api/v2/tables/m8xz7i1uldvt2gr/records', {
-        headers: {
-          'Content-Type': 'application/json',
-          'xc-token': import.meta.env.VITE_NOCODB_TOKEN
-        }
-      });
-      const controleData = await controleRes.json();
-      const dadosControle = controleData.list?.[0]?.DadosClientesVendedores || {};
+      const vendedorURL = vendasRes.find(v => v.vendedor === vendedorId);
+      if (!vendedorURL) return;
 
-      const urlCompleta = `https://max.api.email.nexusnerds.com.br${vendedorMatch.url}`;
-      const vendasRes = await fetch(urlCompleta);
-      const registros = await vendasRes.json();
+      const urlCompleta = `https://max.api.email.nexusnerds.com.br${vendedorURL.url}`;
+      const vendasJson = await fetch(urlCompleta).then(r => r.json());
 
-      const todasVendas = registros.map((cliente) => {
+      const vendedoresControle = controleJson.list || [];
+      const vendedorControle = vendedoresControle.find(v =>
+        v.Title?.toLowerCase().trim() === vendedorId.toLowerCase().trim()
+      );
+      const dadosControle = vendedorControle?.DadosClientesVendedores || {};
+
+      const todasVendas = vendasJson.map((cliente) => {
         const clienteAtivo = clientesAtivos.find(c => c.cnpj_cpf === cliente.cpf);
         const idCliente = clienteAtivo?.id;
         const contrato = contratos.find(c => c.id_cliente === idCliente);
         const status = contrato?.status_internet || '---';
         const data = cliente.dataHora.split(',')[0];
 
-        const dados = dadosControle[cliente.cpf] || {};
-        let valorComissao = 0;
+        const dados = dadosControle[cliente.cpf] || {
+          Autorizado: 'NEGADO',
+          Ativado: 'NÃO',
+          Bloqueado: 'NÃO',
+          Desistiu: 'NÃO',
+          'Pagou Taxa': 'NÃO'
+        };
 
-        const ativado = (dados.Autorizado === 'APROVADO' || dados.Ativado === 'SIM' || dados['Ativado'] === 'SIM');
-        const bloqueado = (dados.Bloqueado === 'SIM' || dados['Bloqueado'] === 'SIM' || status !== 'A');
-        const pagouTaxa = (dados['Pagou Taxa'] === 'SIM' || String(dados['Pagou Taxa']).toUpperCase().trim() === 'SIM');
-        const desistiu = (dados.Desistiu === 'SIM' || dados['Desistiu'] === 'SIM' || dados.Desistiu === 'S' || dados['Desistiu'] === 'S');
+        const ativado = dados.Autorizado?.toUpperCase().trim() === 'APROVADO' || dados.Ativado?.toUpperCase().trim() === 'SIM';
+        const bloqueado = dados.Bloqueado?.toUpperCase().trim() === 'SIM' || status !== 'A';
+        const pagouTaxa = dados['Pagou Taxa']?.toUpperCase().trim() === 'SIM';
+        const desistiu = dados.Desistiu?.toUpperCase().trim() === 'SIM';
+
+        let valorComissao = 0;
+        let motivo = '';
 
         if (desistiu) {
           valorComissao = 0;
+          motivo = 'Desistiu';
         } else if (ativado && !bloqueado && pagouTaxa) {
-          valorComissao = 25;
+          const valorStr = tabelaComissoes?.[classificacao]?.valor || 'R$ 0,00';
+          valorComissao = parseFloat(valorStr.replace('R$', '').replace(',', '.')) || 0;
+          motivo = 'Ativado + Pagou Taxa';
         } else if (ativado && !bloqueado) {
-          valorComissao = 5;
+          const valorStr = tabelaComissoes?.['Sem Taxa']?.valor || 'R$ 0,00';
+          valorComissao = parseFloat(valorStr.replace('R$', '').replace(',', '.')) || 0;
+          motivo = 'Ativado sem taxa';
         } else if (ativado && bloqueado) {
           valorComissao = 0;
+          motivo = 'Ativado mas bloqueado';
+        } else {
+          motivo = 'Condições não atendidas';
         }
 
         return {
@@ -114,7 +149,8 @@ useEffect(() => {
           statusContrato: status,
           data,
           valorComissao,
-          pagouTaxa 
+          pagouTaxa,
+          motivoComissao: motivo
         };
       });
 
@@ -123,6 +159,8 @@ useEffect(() => {
 
       setComissaoTotal(`R$ ${total.toFixed(2).replace('.', ',')}`);
       setVendas(todasVendas);
+
+      if (isFirstLoad) setIsFirstLoad(false);
     } catch (error) {
       console.error('Erro ao buscar dados:', error);
     } finally {
@@ -131,11 +169,11 @@ useEffect(() => {
   };
 
   if (vendedorId) {
-    buscarDados(); // primeira chamada imediata
-    intervalo = setInterval(buscarDados, 3000); // a cada 5 segundos
+    buscarDados();
+    intervalo = setInterval(buscarDados, 3000);
   }
 
-  return () => clearInterval(intervalo); // limpa ao desmontar ou mudar dependências
+  return () => clearInterval(intervalo);
 }, [vendedorId, mesSelecionado]);
 
 
