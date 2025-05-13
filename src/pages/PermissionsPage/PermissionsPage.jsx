@@ -31,6 +31,7 @@ const PermissionsPage = () => {
         'PERM-[FINANCEIRO-CFG-COBRANÇA]',
         'PERM-[ADMIN-ATALHOS]',
         'PERM-[ADMIN-ATALHOS-PESSOAIS]',
+        'PERM-[ADMIN-RELATORIO-CHART-VENDAS]'
       ],
     },
     administrador: {
@@ -62,7 +63,8 @@ const PermissionsPage = () => {
         'PERM-[ADMIN-RELATORIO-ONU-HISTORICO]',
         'PERM-[ADMIN-USER-CADASTRADOS]',
         'PERM-[ADMIN-USER-EDITAR]',
-        'PERM-[ADMIN-RELATORIO-VENDAS-MENSAL]'
+        'PERM-[ADMIN-RELATORIO-VENDAS-MENSAL]',
+        'PERM-[ADMIN-RELATORIO-ONU-HISTORICO-H1]'
       ],
     },
     avancadoN1: {

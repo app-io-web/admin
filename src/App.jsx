@@ -59,6 +59,10 @@ import RelatorioVendasMesPage from './pages/relatorios/VendasMesPage';
 import RelatorioVendasGeralPage from './pages/relatorios/RelatorioVendasGeralPage_TEMP';
 
 
+import ChartVendasPage from './pages/chart-vendas/ChartVendasPage';
+import RelatorioHistoricoOnus from './components/monitoramento/RelatorioHistoricoOnu';
+import RelatorioHistoricoOnusPage from './pages/monitoramento/RelatorioHistoricoOnus';
+
 function App() {
 
   useEffect(() => {
@@ -130,10 +134,13 @@ function App() {
 
         <Route path="/admin/chat" element={<ChatPage />} />
 
-        <Route path="relatorios/monitoramento/onus" element={<RelatorioOnus />} />
+        <Route path="/relatorios/monitoramento/onus" element={<RelatorioOnus />} />
+        <Route path="/relatorios/monitoramento/historico" element={<RelatorioHistoricoOnusPage />} />
         <Route path="/relatorios/vendas" element={<RelatorioVendedoresLista />} />
         <Route path="/relatorios/vendas/:vendedorId" element={<RelatorioVendasMesPage />} />
         <Route path="/relatorios/vendas/geral" element={<RelatorioVendasGeralPage />} />
+
+        <Route path="/relatorios/chart/vendas" element={<ChartVendasPage />} />
 
 
 

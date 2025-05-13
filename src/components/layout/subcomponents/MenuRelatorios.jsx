@@ -40,6 +40,11 @@ export default function MenuRelatorios({ isCollapsed, isActive, search }) {
           path: '/relatorios/monitoramento/onus',
           permission: 'PERM-[ADMIN-RELATORIO-ONU-HISTORICO]', // Nenhuma permissão específica para este item (ajustar se necessário)
         },
+        {
+          label: 'Historico de ONU/ONT Offline',
+          path: '/relatorios/monitoramento/historico',
+          permission: 'PERM-[ADMIN-RELATORIO-ONU-HISTORICO-H1]', // Nenhuma permissão específica para este item (ajustar se necessário)
+        },
       ],
     },
     {
@@ -49,6 +54,11 @@ export default function MenuRelatorios({ isCollapsed, isActive, search }) {
           label: 'Relatório de Vendas',
           path: '/relatorios/vendas',
           permission: 'PERM-[ADMIN-RELATORIO-ONU-HISTORICO]', // Nenhuma permissão específica para este item (ajustar se necessário)
+        },
+       {
+          label: 'Grafico de Vendas',
+          path: '/relatorios/chart/vendas',
+          permission: 'PERM-[ADMIN-RELATORIO-CHART-VENDAS]', // Nenhuma permissão específica para este item (ajustar se necessário)
         },
       ],
     }

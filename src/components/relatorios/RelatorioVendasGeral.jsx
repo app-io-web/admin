@@ -17,7 +17,8 @@ export default function RelatorioVendasGeral() {
   const [comissaoTotal, setComissaoTotal] = useState(0);
   const [vendaSelecionada, setVendaSelecionada] = useState(null);
   const [modoModal, setModoModal] = useState('detalhes'); // 'detalhes' ou 'edicao'
-
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const vendasPorPagina = 9;
 
 
 
@@ -129,6 +130,11 @@ useEffect(() => {
 
 
   const vendasFiltradas = vendas.filter(v => v.data?.includes(`/${mesSelecionado}/`));
+  const totalPaginas = Math.ceil(vendasFiltradas.length / vendasPorPagina);
+  const vendasPaginadas = vendasFiltradas.slice(
+    (paginaAtual - 1) * vendasPorPagina,
+    paginaAtual * vendasPorPagina
+  );
 
   useEffect(() => {
     const total = vendasFiltradas.reduce((acc, v) => acc + (v.valorComissao || 0), 0);
@@ -258,7 +264,10 @@ return (
       <Select
         maxW="200px"
         value={mesSelecionado}
-        onChange={(e) => setMesSelecionado(e.target.value)}
+          onChange={(e) => {
+            setMesSelecionado(e.target.value);
+            setPaginaAtual(1);
+          }}
       >
         {[...Array(12)].map((_, i) => (
           <option key={i} value={String(i + 1).padStart(2, '0')}>
@@ -273,7 +282,7 @@ return (
 
     {carregando ? <Spinner size="lg" /> : (
       <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={4}>
-        {vendasFiltradas.map((v, i) => (
+          {vendasPaginadas.map((v, i) => (
           <Box key={i} p={4} borderWidth="1px" borderRadius="md" boxShadow="sm">
             <VStack align="start" spacing={1}>
               <Text fontWeight="bold">{v.nome}</Text>
@@ -313,7 +322,31 @@ return (
           </Box>
         ))}
       </SimpleGrid>
+      
     )}
+
+      {totalPaginas > 1 && (
+        <Box mt={4} display="flex" justifyContent="center" alignItems="center" gap={4}>
+          <Button
+            size="sm"
+            onClick={() => setPaginaAtual(p => Math.max(1, p - 1))}
+            isDisabled={paginaAtual === 1}
+          >
+            ← Anterior
+          </Button>
+
+          <Text fontSize="sm">Página {paginaAtual} de {totalPaginas}</Text>
+
+          <Button
+            size="sm"
+            onClick={() => setPaginaAtual(p => Math.min(totalPaginas, p + 1))}
+            isDisabled={paginaAtual === totalPaginas}
+          >
+            Próxima →
+          </Button>
+        </Box>
+      )}
+
 
     {modoModal === 'detalhes' ? (
       <ModalDetalhesVenda
