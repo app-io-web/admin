@@ -71,26 +71,27 @@ export const PermissionsProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const loadPermissions = async () => {
-      setIsLoading(true);
-      try {
+    useEffect(() => {
+      const interval = setInterval(async () => {
         const userDetails = JSON.parse(localStorage.getItem('usuario'));
-        //console.log('Usuário obtido do localStorage no PermissionsProvider:', userDetails);
-        //console.log('ID único sendo usado:', userDetails?.idUnico);
-        const response = await fetchUserPermissions();
-        //console.log('Permissões retornadas da API:', response);
-        setPermissions(response);
-      } catch (error) {
-        console.error('Erro ao buscar permissões:', error);
-        setError(error.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+        if (userDetails?.idUnico) {
+          clearInterval(interval);
+          setIsLoading(true);
+          try {
+            const response = await fetchUserPermissions();
+            setPermissions(response);
+          } catch (error) {
+            console.error('Erro ao buscar permissões:', error);
+            setError(error.message);
+          } finally {
+            setIsLoading(false);
+          }
+        }
+      }, 200); // tenta a cada 200ms
 
-    loadPermissions();
-  }, []);
+      return () => clearInterval(interval); // limpa o intervalo ao desmontar
+    }, []);
+
 
   const hasPermission = (permission) => {
     const hasPerm = permissions[permission] === true;
